@@ -1,0 +1,70 @@
+{
+  "compilerOptions": {
+    /* =========================
+       Project Structure
+    ========================= */
+   "rootDir": "./src",
+   "outDir": "./dist",
+
+   "baseUrl": ".",
+
+   "paths": {
+   "@/*": ["src/*"]
+   },
+
+    /* =========================
+       Environment
+    ========================= */
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "lib": ["ES2022"], //Kaunsi JS APIs available hongi.
+
+    "types": ["node"], //Node ke globals milenge.
+
+    /* =========================
+       Type Checking
+    ========================= */
+
+    "strict": true,
+
+    "noUncheckedIndexedAccess": true, //Ye bugs kam karta hai.
+
+    "exactOptionalPropertyTypes": true, //Optional property ko properly treat karega.
+
+    /* =========================
+       Interop
+    ========================= */
+
+    "esModuleInterop": true, //Express wagairah import karna easy.
+
+    "allowSyntheticDefaultImports": true, //Modern import support.
+
+    /* =========================
+       Output
+    ========================= */
+
+    "sourceMap": true, //Debugging.
+
+    "declaration": true, //Library ke liye useful.
+
+    "declarationMap": true,
+
+    /* =========================
+       Misc
+    ========================= */
+
+    "resolveJsonModule": true, //JSON import kar sakte ho.
+
+    "forceConsistentCasingInFileNames": true,
+
+    "isolatedModules": true, //Fast compilation.
+
+    "skipLibCheck": true //Third party packages ko compile nahi karega.Compilation fast hogi.
+  },
+
+  "include": ["src"],
+
+  "exclude": ["node_modules", "dist"]
+}
