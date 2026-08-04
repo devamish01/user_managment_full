@@ -8,13 +8,11 @@
  */
 
 import { UserApi } from "../api";
-import { AuthApi } from "@/modules/auth/api";
 import type { UserQueryParams } from "@/core/api";
 import type { User } from "@/lib/types";
-import type { RegisterCredentials } from "@/modules/auth/types";
 import type { UserFormState } from "../types";
 
-const createRegistrationPayload = (form: UserFormState): RegisterCredentials => {
+const createUserPayload = (form: UserFormState) => {
   if (!form.password) {
     throw new Error("Password is required when creating a new user.");
   }
@@ -45,6 +43,11 @@ const createRegistrationPayload = (form: UserFormState): RegisterCredentials => 
     password: form.password,
     roleId: form.roleId,
     status: form.status,
+    phone: form.phone,
+    location: form.location,
+    address: form.address,
+    bio: form.bio,
+    jobTitle: form.jobTitle,
   };
 };
 
@@ -58,8 +61,8 @@ export class UserService {
   }
 
   static createUser(form: UserFormState) {
-    const payload = createRegistrationPayload(form);
-    return AuthApi.register(payload);
+    const payload = createUserPayload(form);
+    return UserApi.createUser(payload);
   }
 
   static updateUser(id: string, updates: Partial<User>) {

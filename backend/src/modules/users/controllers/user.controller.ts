@@ -37,8 +37,8 @@ export const getUserByIdController = asyncHandler(
 );
 
 export const createUserController = asyncHandler(
-  async (req: Request, res: Response): Promise<Response> => {
-    const user = await createUser(req.body);
+  async (req: AuthRequest, res: Response): Promise<Response> => {
+    const user = await createUser(req.body, req.user?.userId);
 
     return createdResponse<IUser>({
       res,

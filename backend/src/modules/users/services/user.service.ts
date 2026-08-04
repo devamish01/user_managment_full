@@ -223,7 +223,7 @@ export const getUserById = async (id: string) => {
   return transformUser({ ...user, approvedByName });
 };
 
-export const createUser = async (data: CreateUserInput) => {
+export const createUser = async (data: CreateUserInput, approvedByUserId?: string) => {
   // Check if email exists
   const existingUser = await User.findOne({ email: data.email.toLowerCase() });
   if (existingUser) {
@@ -238,8 +238,12 @@ export const createUser = async (data: CreateUserInput) => {
   const lastName = data.lastName;
   const email = data.email ?? "";
   const username = firstName.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+  const userId = await generateUserId();
+  const normalizedStatus = data.status ? data.status.toLowerCase() : "pending";
+  const isApproved = normalizedStatus === "active";
+  
   const newUserPayload = {
-    userId: generateUserId(),
+    userId,
     username,
     firstName,
     lastName,
@@ -249,8 +253,15 @@ export const createUser = async (data: CreateUserInput) => {
     address: data.address || "",
     bio: data.bio || "",
     roleId: data.roleId!,
-    status: data.status ? data.status.toLowerCase() : "pending",
+    status: normalizedStatus,
     password: (data as any).password || "",
+    // Role assignment tracking
+    roleAssignedType: "MANUAL",
+    roleAssignedBy: approvedByUserId || "SYSTEM",
+    roleAssignedAt: new Date(),
+    // Approval tracking
+    approvedAt: isApproved ? new Date() : null,
+    approvedBy: isApproved ? (approvedByUserId || "SYSTEM") : null,
   };
 
   const user = await User.create(newUserPayload as any);

@@ -20,7 +20,20 @@ export class UserApi {
   }
 
   static createUser(
-    user: Omit<User, "id" | "createdAt" | "lastActive">,
+    user: {
+      username: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      password: string;
+      roleId: string;
+      status: string;
+      phone?: string;
+      location?: string;
+      address?: string;
+      bio?: string;
+      jobTitle?: string;
+    },
   ): Promise<ApiResponse<User>> {
     return api.post<User>(USERS, user);
   }

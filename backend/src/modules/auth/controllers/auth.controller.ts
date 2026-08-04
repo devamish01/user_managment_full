@@ -22,9 +22,10 @@ export const getAuthStatus = (
 
 export const registerUser = asyncHandler(
   async (req, res) => {
-const user = await register(
-  req.body,
-);
+    const user = await register(
+      req.body,
+      req.user?.userId,
+    );
     return successResponse({
       res,
       message: AUTH_MESSAGES.REGISTER_SUCCESS,

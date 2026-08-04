@@ -11,6 +11,10 @@ export const ROLE_MESSAGES = {
   CANNOT_MODIFY_SUPER_ADMIN: "Cannot modify the Super Admin role",
   CANNOT_DELETE_SYSTEM_ROLE: "Cannot delete system roles",
   CANNOT_MODIFY_SYSTEM_ROLE: "Cannot modify system roles",
+  CANNOT_DELETE_DEFAULT_ROLE: "Cannot delete the Default Viewer role",
+  CANNOT_MODIFY_DEFAULT_ROLE: "Cannot modify the Default Viewer role",
+  DEFAULT_ROLE_NOT_FOUND: "Default Viewer role not found",
+  USERS_REASSIGNED: "users were automatically moved to Default Viewer",
 } as const;
 
 export const ROLE_ERRORS = {
@@ -20,8 +24,13 @@ export const ROLE_ERRORS = {
   CANNOT_MODIFY_SUPER_ADMIN: "Cannot modify the Super Admin role",
   CANNOT_DELETE_SYSTEM_ROLE: "Cannot delete system roles",
   CANNOT_MODIFY_SYSTEM_ROLE: "Cannot modify system roles",
+  CANNOT_DELETE_DEFAULT_ROLE: "Cannot delete the Default Viewer role",
+  CANNOT_MODIFY_DEFAULT_ROLE: "Cannot modify the Default Viewer role",
+  DEFAULT_ROLE_NOT_FOUND: "Default Viewer role not found",
+  USERS_REASSIGNED: "users were automatically moved to Default Viewer",
 } as const;
 
 export const SUPER_ADMIN_ROLE_ID = "r1";
+export const DEFAULT_VIEWER_ROLE_ID = "r4";
 export const SUPER_ADMIN_ROLE_NAME = "Super Admin";
-export const SYSTEM_ROLE_IDS = ["r1", "r2", "r3", "r4"] as const;
+export const SYSTEM_ROLE_IDS = ["r1", "r4"] as const;
