@@ -3,5 +3,8 @@ export type { LoginHeaderProps } from "./LoginHeader";
 export { LoginForm } from "./LoginForm";
 export { LoginCard } from "./LoginCard";
 export type { LoginCardProps } from "./LoginCard";
+export { RegisterForm } from "./RegisterForm";
+export { RegisterCard } from "./RegisterCard";
+export type { RegisterCardProps } from "./RegisterCard";
 export { UserSwitcher } from "./UserSwitcher";
 export type { UserSwitcherProps } from "./UserSwitcher";

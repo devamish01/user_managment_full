@@ -17,7 +17,7 @@ export const AdminLayout = ({ children }: { children: React.ReactNode }) => {
       <div className="flex min-h-screen flex-1 flex-col lg:pl-0">
         <Header onMenu={() => setSidebarOpen(true)} />
         <main className="flex-1 p-4 md:p-6 lg:p-8">
-          <div className="mx-auto max-w-7xl animate-in">{children}</div>
+          <div className="mx-auto animate-in">{children}</div>
         </main>
         <Footer />
       </div>

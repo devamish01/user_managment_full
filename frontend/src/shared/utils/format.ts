@@ -14,6 +14,8 @@ export const statusToBadgeVariant = (status: string): BadgeVariant => {
       return "secondary";
     case "blocked":
       return "destructive";
+    case "pending":
+      return "warning";
     default:
       return "secondary";
   }

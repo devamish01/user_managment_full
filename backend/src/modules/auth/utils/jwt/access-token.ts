@@ -10,6 +10,6 @@ export const generateAccessToken = (
     env.JWT_ACCESS_SECRET,
     {
       expiresIn: env.JWT_ACCESS_EXPIRES_IN,
-    },
+    } as jwt.SignOptions,
   );
 };

@@ -1,5 +1,3 @@
-import * as React from "react";
-
 const CardSkeleton = () => (
   <div className="overflow-hidden rounded-xl border border-border bg-card">
     <div className="h-1.5 w-full animate-pulse bg-muted" />

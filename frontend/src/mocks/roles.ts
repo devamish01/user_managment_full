@@ -12,6 +12,7 @@ export const mockRoles: Role[] = [
     permissionIds: ALL_PERMS,
     createdAt: "2024-01-10",
     isSystem: true,
+    createdBy: "SYSTEM",
   },
   {
     id: "r2",
@@ -33,6 +34,7 @@ export const mockRoles: Role[] = [
     ],
     createdAt: "2024-01-12",
     isSystem: true,
+    createdBy: "SYSTEM",
   },
   {
     id: "r3",
@@ -47,6 +49,7 @@ export const mockRoles: Role[] = [
     ],
     createdAt: "2024-02-01",
     isSystem: true,
+    createdBy: "SYSTEM",
   },
   {
     id: "r4",
@@ -60,5 +63,6 @@ export const mockRoles: Role[] = [
     ],
     createdAt: "2024-03-05",
     isSystem: true,
+    createdBy: "SYSTEM",
   },
 ];

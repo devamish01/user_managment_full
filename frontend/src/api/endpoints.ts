@@ -21,9 +21,10 @@ import {
   CURRENT_USER,
   SWITCH_USER,
   SUPER_ADMIN_PASSWORD,
+  REGISTER,
 } from "@/modules/auth/api";
 import { NAVIGATION } from "@/modules/navigation/api";
-import { DEPARTMENTS, DEPARTMENT_DETAILS, LOGS, SETTINGS } from "@/modules/system/api";
+import { LOGS, SETTINGS } from "@/modules/system/api";
 
 // Re-export every endpoint as a named export so deep imports also keep working.
 export {
@@ -33,14 +34,14 @@ export {
   CURRENT_USER,
   SWITCH_USER,
   SUPER_ADMIN_PASSWORD,
+  REGISTER,
   USERS,
   USER_DETAILS,
   ROLES,
   ROLE_DETAILS,
   PERMISSIONS,
   PERMISSION_DETAILS,
-  DEPARTMENTS,
-  DEPARTMENT_DETAILS,
+
   LOGS,
   SETTINGS,
   NAVIGATION,
@@ -54,6 +55,7 @@ export const API = {
   CURRENT_USER,
   SWITCH_USER,
   SUPER_ADMIN_PASSWORD,
+  REGISTER,
 
   /* ── Users ── */
   USERS,
@@ -67,9 +69,6 @@ export const API = {
   PERMISSIONS,
   PERMISSION_DETAILS,
 
-  /* ── Departments ── */
-  DEPARTMENTS,
-  DEPARTMENT_DETAILS,
 
   /* ── Activity Logs ── */
   LOGS,

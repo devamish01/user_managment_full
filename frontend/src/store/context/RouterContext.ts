@@ -1,9 +1,9 @@
 import * as React from "react";
-import type { Route } from "@/routes";
+import type { RouteName } from "@/shared/constants/routes";
 
 export interface RouterContextType {
-  route: Route;
-  navigate: (r: Route) => void;
+  route: RouteName;
+  navigate: (r: RouteName) => void;
 }
 
 export const RouterCtx = React.createContext<RouterContextType | null>(null);

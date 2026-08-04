@@ -12,8 +12,7 @@ app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
 app.use("/api/v1", routes);
-
-
+app.set("etag", false);
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
 export default app; 

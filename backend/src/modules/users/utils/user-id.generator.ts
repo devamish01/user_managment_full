@@ -1,9 +1,13 @@
-let counter = 1;
+import { User } from "@/modules/users/model/index.js";
 
-export const generateUserId = () => {
-  const id = String(counter).padStart(5, "0");
+export const generateUserId = async () => {
+  const lastUser = await User.findOne().sort({ userId: -1 });
 
-  counter++;
+  if (!lastUser) {
+    return "USR-00001";
+  }
 
-  return `USR-${id}`;
+  const lastNumber = Number(lastUser.userId.replace("USR-", ""));
+
+  return `USR-${String(lastNumber + 1).padStart(5, "0")}`;
 };

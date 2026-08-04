@@ -26,6 +26,7 @@ export const mockPermissions: Permission[] = [
   { id: "p25", name: "Tab: Active Users", key: "users.tab_active", module: "User Management UI", description: "Show Active tab" },
   { id: "p26", name: "Tab: Inactive Users", key: "users.tab_inactive", module: "User Management UI", description: "Show Inactive tab" },
   { id: "p27", name: "Tab: Blocked Users", key: "users.tab_blocked", module: "User Management UI", description: "Show Blocked tab" },
+  { id: "p28", name: "Tab: Pending Users", key: "users.tab_pending", module: "User Management UI", description: "Show Pending tab" },
   { id: "p28", name: "Section: User Details", key: "users.sec_details", module: "User Management UI", description: "Show Details section in profile" },
   { id: "p29", name: "Section: Security", key: "users.sec_security", module: "User Management UI", description: "Show Security section in profile" },
 

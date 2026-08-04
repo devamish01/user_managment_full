@@ -173,14 +173,17 @@ export const Avatar = ({
   name,
   size = 36,
   className,
-}: { src?: string; name: string; size?: number; className?: string }) => {
+}: { src?: string; name?: string; size?: number; className?: string }) => {
   const [error, setError] = React.useState(false);
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const safeName = (name || "").trim();
+  const initials = safeName
+    ? safeName
+        .split(" ")
+        .map((n) => (n ? n[0] : ""))
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "";
   const colors = [
     "from-indigo-500 to-purple-500",
     "from-blue-500 to-cyan-500",
@@ -189,7 +192,7 @@ export const Avatar = ({
     "from-fuchsia-500 to-rose-500",
     "from-sky-500 to-indigo-500",
   ];
-  const idx = name.charCodeAt(0) % colors.length;
+  const idx = safeName ? safeName.charCodeAt(0) % colors.length : 0;
   return (
     <div
       style={{ width: size, height: size, fontSize: size * 0.4 }}

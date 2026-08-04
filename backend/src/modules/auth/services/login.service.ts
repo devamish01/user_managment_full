@@ -17,8 +17,6 @@ import { AUTH_MESSAGES , AUTH_ERRORS } from "@/modules/auth/constants/index.js";
 import { HTTP_STATUS } from "@/shared/constants/http-status.js";
 import { AppError } from "@/shared/errors/index.js";
 
-import { USER_STATUS } from "@/modules/users/constants/user.constants.js";
-
 import type { LoginInput } from "../types/login.type.js";
 import { countActiveSessions, generateSessionId } from "@/modules/sessions/index.js";
 
@@ -53,7 +51,7 @@ export const login = async (
   }
 
   // User Status Check
-  if (user.status === USER_STATUS.PENDING) {
+  if (user.status === "pending") {
     throw new AppError({
       message :AUTH_ERRORS.ACCOUNT_PENDING,
       statusCode: HTTP_STATUS.FORBIDDEN,
@@ -61,7 +59,7 @@ export const login = async (
     });
   }
 
-  if (user.status === USER_STATUS.BLOCKED) {
+  if (user.status === "blocked") {
     throw new AppError({
       message: "Your account has been blocked.",
       statusCode: HTTP_STATUS.FORBIDDEN,
@@ -69,7 +67,7 @@ export const login = async (
     });
   }
 
-  if (user.status === USER_STATUS.INACTIVE) {
+  if (user.status === "inactive") {
     throw new AppError({
       message: "Your account is inactive.",
       statusCode: HTTP_STATUS.FORBIDDEN,
@@ -82,7 +80,7 @@ const activeSessions =
  );
 
 
-if(activeSessions >= 12){
+if(activeSessions >= 102){
 
  throw new AppError({
    message:"Maximum active sessions reached.",
@@ -151,6 +149,25 @@ return {
     rememberMe: true,
     loginAt: new Date().toISOString(),
     expiresAt: getRefreshTokenExpiry(),
+  },
+  user: {
+    userId: userObject.userId,
+    username: userObject.username,
+    firstName: userObject.firstName,
+    lastName: userObject.lastName,
+    email: userObject.email,
+    roleId: userObject.roleId,
+    role: userObject.role,
+    status: userObject.status,
+    approvedAt: userObject.approvedAt,
+    approvedBy: userObject.approvedBy,
+    phone: userObject.phone,
+    location: userObject.location,
+    address: userObject.address,
+    bio: userObject.bio,
+    lastActive: userObject.lastActive,
+    createdAt: userObject.createdAt,
+    updatedAt: userObject.updatedAt,
   },
 };
 };

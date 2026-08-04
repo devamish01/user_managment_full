@@ -15,6 +15,7 @@ export interface UserStats {
   active: number;
   inactive: number;
   blocked: number;
+  pending: number;
 }
 
 export interface Pagination {

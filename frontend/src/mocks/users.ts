@@ -1,5 +1,4 @@
 import type { User } from "@/lib/types";
-import { mockDepartments } from "./departments";
 import { mockRoles } from "./roles";
 
 const firstNames = [
@@ -27,7 +26,7 @@ const jobTitles = [
 const streets = ["Market St","Sunset Blvd","Baker St","Elm Ave","Broadway","Park Ave","5th Ave","King St","Queen St","Maple Rd","Oak Lane","Pine St","Cedar Ave","Birch Rd","Willow Way"];
 const cities = ["San Francisco","New York","London","Berlin","Toronto","Sydney","Singapore","Amsterdam","Paris","Tokyo","Austin","Dublin","Bangalore","Barcelona","Chicago"];
 const countries = ["USA","USA","UK","Germany","Canada","Australia","Singapore","Netherlands","France","Japan","USA","Ireland","India","Spain","USA"];
-const statuses: User["status"][] = ["active","active","active","active","active","inactive","inactive","blocked"];
+const statuses: User["status"][] = ["active","active","active","active","active","inactive","inactive","blocked","pending","pending"];
 
 function seededRandom(seed: number) {
   return function () {
@@ -48,7 +47,6 @@ function generateUsers(count: number): User[] {
     const last = pick(lastNames, rand);
     const name = `${first} ${last}`;
     const roleId = `r${1 + Math.floor(rand() * mockRoles.length)}`;
-    const dept = pick(mockDepartments, rand);
     const cityIdx = Math.floor(rand() * cities.length);
     const streetNo = 100 + Math.floor(rand() * 9899);
     const zip = 10000 + Math.floor(rand() * 89999);
@@ -59,20 +57,25 @@ function generateUsers(count: number): User[] {
     const active = new Date(Date.now() - daysAgoActive * 86400000 - Math.floor(rand() * 86400000));
     users.push({
       id: `USR-${String(i).padStart(5, "0")}`,
+      username: `${first.toLowerCase()}${i}`,
+      firstName: first,
+      lastName: last,
       name,
       email: `${first.toLowerCase()}.${last.toLowerCase()}${i}@company.io`,
       phone: `+1 (${200 + Math.floor(rand() * 700)}) ${100 + Math.floor(rand() * 800)}-${1000 + Math.floor(rand() * 8999)}`,
       roleId,
-      departmentId: dept.id,
+      role: mockRoles.find(r => r.id === roleId)?.name || "viewer",
       status: pick(statuses, rand),
-      jobTitle: pick(jobTitles, rand),
       location: `${cities[cityIdx]}, ${countries[cityIdx]}`,
       address,
       createdAt: created.toISOString(),
+      updatedAt: created.toISOString(),
       lastActive: active.toISOString(),
       bio: `${pick(jobTitles, rand)} passionate about building great products and collaborating with a global team.`,
       // Deterministic mock password — never used outside the mock backend.
       password: `${first.toLowerCase()}${i}`,
+      approvedAt: created.toISOString(),
+      approvedBy: "SYSTEM",
     });
   }
   return users;
@@ -103,13 +106,13 @@ mockUsers[0] = {
   firstName: "Aminesh",
   lastName: "Mahajan",
 
-  role: "user",
-  roleId: "r1",      // old permission system ke liye
+  role: "superadmin",
 
   approvedAt: "2026-07-27T08:45:33.912Z",
   approvedBy: "SYSTEM",
 
   updatedAt: "2026-07-27T08:45:33.914Z",
+  isProtected: true,
 };
 mockUsers[1] = {
   ...mockUsers[1],
@@ -119,15 +122,31 @@ mockUsers[1] = {
   password: "admin",
   roleId: "r2",
   status: "active",
+  username: "jordan",
+  firstName: "Jordan",
+  lastName: "Reed",
+  role: "admin",
+  approvedAt: "2026-07-27T08:45:33.912Z",
+  approvedBy: "SYSTEM",
+  updatedAt: "2026-07-27T08:45:33.914Z",
+  isProtected: false,
 };
 mockUsers[2] = {
   ...mockUsers[2],
   id: "USR-00003",
   name: "Sam Rivera",
   email: "manager@nexus.com",
-  password: "manager",
+  password: "managers",
   roleId: "r3",
   status: "active",
+  username: "sam",
+  firstName: "Sam",
+  lastName: "Rivera",
+  role: "manager",
+  approvedAt: "2026-07-27T08:45:33.912Z",
+  approvedBy: "SYSTEM",
+  updatedAt: "2026-07-27T08:45:33.914Z",
+  isProtected: false,
 };
 mockUsers[3] = {
   ...mockUsers[3],
@@ -137,4 +156,12 @@ mockUsers[3] = {
   password: "viewer",
   roleId: "r4",
   status: "active",
+  username: "casey",
+  firstName: "Casey",
+  lastName: "Lee",
+  role: "viewer",
+  approvedAt: "2026-07-27T08:45:33.912Z",
+  approvedBy: "SYSTEM",
+  updatedAt: "2026-07-27T08:45:33.914Z",
+  isProtected: false,
 };

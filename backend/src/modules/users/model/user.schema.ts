@@ -1,7 +1,6 @@
 import {
   USER_ROLE,
   USER_ROLE_VALUES,
-  USER_STATUS,
   USER_STATUS_VALUES,
 } from "@/modules/users/constants/user.constants.js";
 import { Schema } from "mongoose";
@@ -48,8 +47,8 @@ export const userSchema = new Schema(
     },
     roleId: {
       type: String,
-      default: 'r1',
-      enum: 'r1',
+      required: true,
+      trim: true,
     },
 
     role: {
@@ -60,9 +59,15 @@ export const userSchema = new Schema(
 
     status: {
       type: String,
-      default: USER_STATUS.PENDING,
+      default: "pending",
       enum: USER_STATUS_VALUES,
     },
+
+    isProtected: {
+      type: Boolean,
+      default: false,
+    },
+
     approvedAt: {
       type: Date,
       default: null,
@@ -73,12 +78,43 @@ export const userSchema = new Schema(
       default: null,
       trim: true,
     },
+    phone: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    location: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    address: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    bio: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    lastActive: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
     versionKey: false,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   },
 );
+
+// Virtual for full name
+userSchema.virtual("name").get(function () {
+  return `${this.firstName} ${this.lastName}`;
+});
 
 // ===== Indexes =====
 

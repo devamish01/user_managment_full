@@ -1,0 +1,1 @@
+export { permissionRoutes } from "./permission.route.js";

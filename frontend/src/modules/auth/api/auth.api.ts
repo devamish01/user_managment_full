@@ -10,7 +10,9 @@ import { api } from "@/core/api";
 import type { ApiResponse } from "@/core/api";
 import type { User } from "@/lib/types";
 import type { Session } from "@/services/auth.service";
+import type { RegisterCredentials } from "../types";
 import {
+  REGISTER,
   LOGIN,
   LOGOUT,
   SESSION,
@@ -45,6 +47,10 @@ export class AuthApi {
 
   static logout(): Promise<ApiResponse<unknown>> {
     return api.post(LOGOUT);
+  }
+
+  static register(payload: RegisterCredentials): Promise<ApiResponse<User>> {
+    return api.post<User>(REGISTER, payload);
   }
 
   static switchUser(roleId: string): Promise<ApiResponse<User>> {

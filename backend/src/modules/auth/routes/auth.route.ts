@@ -10,6 +10,7 @@ import {
   refreshToken,
   logoutUser,
   meController,
+  getSession,
 } from "@/modules/auth/controllers/index.js";
 import { authMiddleware } from '@/shared/middlewares/index.js';
 
@@ -45,4 +46,10 @@ authRoutes.get(
  "/me",
  authMiddleware,
  meController
+);
+
+authRoutes.get(
+  "/session",
+  authMiddleware,
+  getSession
 );

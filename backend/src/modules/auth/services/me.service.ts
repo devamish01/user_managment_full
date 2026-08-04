@@ -40,6 +40,12 @@ export const getMe = async (
     approvedAt: userObject.approvedAt,
     approvedBy: userObject.approvedBy,
 
+    phone: userObject.phone,
+    location: userObject.location,
+    address: userObject.address,
+    bio: userObject.bio,
+    lastActive: userObject.lastActive,
+
     createdAt: userObject.createdAt,
     updatedAt: userObject.updatedAt,
   };

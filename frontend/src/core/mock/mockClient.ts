@@ -339,7 +339,6 @@ mockClient.register("GET", "/auth/me", async () => {
   if (!user) {
     return notFoundError("Current user");
   }
-
   return successResponse(
     {
       userId: user.id,
@@ -351,7 +350,7 @@ mockClient.register("GET", "/auth/me", async () => {
       email: user.email,
 
       role: user.role,
-      status: user.status,
+      status: user.status.toLowerCase(),
       roleId: user.roleId,
 
       approvedAt: user.approvedAt,
@@ -440,8 +439,129 @@ mockClient.register("POST", "/auth/login", async ({ body }) => {
         loginAt: mockAuth.loginAt,
         expiresAt: mockAuth.expiresAt,
       },
+      user: {
+        userId: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        roleId: user.roleId,
+        role: user.role,
+        status: user.status.toLowerCase(),
+        approvedAt: user.approvedAt,
+        approvedBy: user.approvedBy,
+        phone: user.phone,
+        location: user.location,
+        address: user.address,
+        bio: user.bio,
+        lastActive: user.lastActive,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
     },
     "Login successful."
+  );
+});
+
+mockClient.register("POST", "/auth/register", async ({ body }) => {
+  const payload = (body || {}) as {
+    username?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    password?: string;
+    roleId?: string;
+    status?: "active" | "inactive" | "blocked" | "pending";
+  };
+
+  const required: ("username" | "firstName" | "lastName" | "email" | "password")[] = ["username", "firstName", "lastName", "email", "password"];
+  const errs = requireFields(payload, required);
+  if (errs.length) return validationError(errs);
+
+  // Password validation - must be at least 8 characters
+  if (payload.password!.length < 8) {
+    return validationError([
+      {
+        code: "TOO_SHORT",
+        field: "password",
+        message: "Password must be at least 8 characters",
+      },
+    ]);
+  }
+
+  const email = payload.email!.trim().toLowerCase();
+  const username = payload.username!.trim().toLowerCase();
+
+  if (db.users.some((u) => u.email.toLowerCase() === email)) {
+    return conflictError("A user with this email already exists", "email");
+  }
+  if (db.users.some((u) => u.username.toLowerCase() === username)) {
+    return conflictError("A user with this username already exists", "username");
+  }
+
+  const nextIdNum =
+    Math.max(
+      0,
+      ...db.users.map((u) => parseInt(u.id.replace(/\D/g, ""), 10) || 0),
+    ) + 1;
+
+  // Map roleId to role name (matching backend logic)
+  const roleId = payload.roleId || "r4";
+  const roleMap: Record<string, string> = {
+    "r1": "super_admin",
+    "r2": "admin",
+    "r3": "manager",
+    "r4": "viewer",
+  };
+  const role = roleMap[roleId] || "viewer";
+
+  // Normalize status (matching backend logic)
+  const status = (payload.status || "pending") as "active" | "inactive" | "blocked" | "pending";
+
+  const newUser = {
+    id: `USR-${String(nextIdNum).padStart(5, "0")}`,
+    username: payload.username!.trim(),
+    firstName: payload.firstName!.trim(),
+    lastName: payload.lastName!.trim(),
+    name: `${payload.firstName!.trim()} ${payload.lastName!.trim()}`,
+    email: email,
+    password: payload.password!,
+    phone: "",
+    roleId,
+    role,
+    status,
+    location: "",
+    address: "",
+    bio: "",
+    createdAt: new Date().toISOString(),
+    lastActive: new Date().toISOString(),
+    approvedAt: status === "pending" ? null : new Date().toISOString(),
+    approvedBy: status === "pending" ? null : "SYSTEM",
+  } as User;
+
+  db.users.unshift(newUser);
+
+  return createdResponse(
+    {
+      userId: newUser.id,
+      username: newUser.username,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      email: newUser.email,
+      roleId: newUser.roleId,
+      role: newUser.role,
+      status: newUser.status,
+      approvedAt: newUser.approvedAt,
+      approvedBy: newUser.approvedBy,
+      phone: newUser.phone,
+      location: newUser.location,
+      address: newUser.address,
+      bio: newUser.bio,
+      lastActive: newUser.lastActive,
+      createdAt: newUser.createdAt,
+      updatedAt: newUser.updatedAt,
+    },
+    "User registered successfully"
   );
 });
 
@@ -491,23 +611,44 @@ mockClient.register("PUT", "/auth/super-admin-password", async ({ body }) => {
 mockClient.register("GET", "/users", async ({ queryParams }) => {
   const { rows, pagination } = applyListQuery(db.users, queryParams, {
     searchFields: ["name", "email", "phone", "id"],
-    filterFields: ["status", "roleId", "departmentId"],
+    filterFields: ["status", "roleId"],
     sortFields: ["id", "name", "email", "createdAt", "lastActive"],
   });
+
+  const approverNameMap = db.users.reduce((map: Record<string, string>, user) => {
+    map[user.id] = `${user.firstName} ${user.lastName}`.trim();
+    return map;
+  }, {} as Record<string, string>);
+
+  const rowsWithApprover = rows.map((user) => ({
+    ...user,
+    approvedByName:
+      user.approvedBy && user.approvedBy !== "SYSTEM"
+        ? approverNameMap[user.approvedBy]
+        : null,
+  }));
+
   // Aggregate stats computed across the entire dataset, not the filtered page.
   const stats = {
     total: db.users.length,
     active: db.users.filter((u) => u.status === "active").length,
     inactive: db.users.filter((u) => u.status === "inactive").length,
     blocked: db.users.filter((u) => u.status === "blocked").length,
+    pending: db.users.filter((u) => u.status === "pending").length,
   };
-  return successResponse(rows, "Users retrieved", { ...pagination, stats });
+  return successResponse(rowsWithApprover, "Users retrieved", { ...pagination, stats });
 });
 
 mockClient.register("GET", "/users/:id", async ({ pathParams }) => {
   const user = db.users.find((u) => u.id === pathParams.id);
   if (!user) return notFoundError(`User ${pathParams.id}`);
-  return successResponse(user, "User retrieved");
+
+  const approvedByName =
+    user.approvedBy && user.approvedBy !== "SYSTEM"
+      ? `${user.approvedBy ? db.users.find((u) => u.id === user.approvedBy)?.firstName : ""} ${user.approvedBy ? db.users.find((u) => u.id === user.approvedBy)?.lastName : ""}`.trim() || null
+      : null;
+
+  return successResponse({ ...user, approvedByName }, "User retrieved");
 });
 
 mockClient.register("POST", "/users", async ({ body }) => {
@@ -539,10 +680,8 @@ mockClient.register("POST", "/users", async ({ body }) => {
   const defaults = {
     address: "",
     location: "",
-    jobTitle: "",
     bio: "",
-    departmentId: db.departments[0]?.id || "",
-    status: "active" as const,
+    status: "pending" as const,
     phone: "",
   };
   const newUser = {
@@ -580,6 +719,45 @@ mockClient.register("PUT", "/users/:id", async ({ pathParams, body }) => {
   ) {
     return conflictError("A user with this email already exists", "email");
   }
+  // Check username uniqueness
+  if (payload.username !== undefined) {
+    if (
+      db.users.some(
+        (u: User, i: number) =>
+          i !== index && u.username.toLowerCase() === payload.username!.toLowerCase(),
+      )
+    ) {
+      return conflictError("A user with this username already exists", "username");
+    }
+  }
+  // Prevent changing role/status for protected system super admin (roleId: r1, approvedBy: SYSTEM)
+  const targetUser = db.users[index];
+  const isTargetProtected = targetUser.roleId === "r1" && targetUser.approvedBy === "SYSTEM";
+  if (isTargetProtected) {
+    if (typeof payload.status !== "undefined" || typeof payload.roleId !== "undefined") {
+      return badRequestError("System protected user cannot be modified.", [{ code: "SYSTEM_PROTECTED_USER", message: "System protected user cannot be modified." }]);
+    }
+  }
+
+  // Convert roleId to role
+  const roleMap: Record<string, string> = {
+    r1: "super_admin",
+    r2: "admin",
+    r3: "manager",
+    r4: "viewer",
+  };
+  if (payload.roleId && roleMap[payload.roleId]) {
+    payload.role = roleMap[payload.roleId];
+  }
+
+  // Handle firstName and lastName if provided
+  if (payload.firstName) {
+    payload.firstName = payload.firstName;
+  }
+  if (payload.lastName) {
+    payload.lastName = payload.lastName;
+  }
+
   db.users[index] = { ...db.users[index], ...payload };
   return successResponse(db.users[index], "User replaced");
 });
@@ -607,6 +785,54 @@ mockClient.register("PATCH", "/users/:id", async ({ pathParams, body }) => {
       return conflictError("A user with this email already exists", "email");
     }
   }
+  // Check username uniqueness
+  if (payload.username !== undefined) {
+    if (
+      db.users.some(
+        (u: User, i: number) =>
+          i !== index && u.username.toLowerCase() === payload.username!.toLowerCase(),
+      )
+    ) {
+      return conflictError("A user with this username already exists", "username");
+    }
+  }
+  // Prevent modifying protected system super admin (roleId: r1, approvedBy: SYSTEM)
+  const targetUser = db.users[index];
+  const isTargetProtected = targetUser.roleId === "r1" && targetUser.approvedBy === "SYSTEM";
+  
+  if (isTargetProtected) {
+    return badRequestError("System protected user cannot be modified.", [{ code: "SYSTEM_PROTECTED_USER", message: "System protected user cannot be modified." }]);
+  }
+
+  // Convert roleId to role
+  const roleMap: Record<string, string> = {
+    r1: "super_admin",
+    r2: "admin",
+    r3: "manager",
+    r4: "viewer",
+  };
+  if (payload.roleId && roleMap[payload.roleId]) {
+    payload.role = roleMap[payload.roleId];
+  }
+
+  // Handle firstName and lastName if provided
+  if (payload.firstName) {
+    payload.firstName = payload.firstName;
+  }
+  if (payload.lastName) {
+    payload.lastName = payload.lastName;
+  }
+
+  // If the status changes to active, record the current approver
+  if (
+    payload.status &&
+    payload.status.toLowerCase() === "active" &&
+    db.users[index].status !== "active"
+  ) {
+    payload.approvedAt = new Date().toISOString();
+    payload.approvedBy = mockAuth.currentUserId || "SYSTEM";
+  }
+
   db.users[index] = { ...db.users[index], ...payload };
   return successResponse(db.users[index], "User updated");
 });
@@ -614,6 +840,15 @@ mockClient.register("PATCH", "/users/:id", async ({ pathParams, body }) => {
 mockClient.register("DELETE", "/users/:id", async ({ pathParams }) => {
   const index = db.users.findIndex((u) => u.id === pathParams.id);
   if (index === -1) return notFoundError(`User ${pathParams.id}`);
+  
+  // Prevent deleting protected system super admin (roleId: r1, approvedBy: SYSTEM)
+  const targetUser = db.users[index];
+  const isTargetProtected = targetUser.roleId === "r1" && targetUser.approvedBy === "SYSTEM";
+  
+  if (isTargetProtected) {
+    return badRequestError("System protected user cannot be deleted.", [{ code: "SYSTEM_PROTECTED_USER", message: "System protected user cannot be deleted." }]);
+  }
+
   db.users.splice(index, 1);
   return successResponse({ ok: true }, "User deleted");
 });
@@ -639,15 +874,27 @@ mockClient.register("POST", "/roles", async ({ body }) => {
   ) {
     return conflictError("A role with this name already exists", "name");
   }
+  
+  // Generate sequential role ID (r5, r6, ...) based on existing roles
+  const existingRoleNumbers = db.roles
+    .map((r) => parseInt(r.id.replace("r", ""), 10))
+    .filter((n) => !isNaN(n));
+  const nextRoleNumber = existingRoleNumbers.length > 0 ? Math.max(...existingRoleNumbers) + 1 : 5;
+  
+  // Get current user ID for createdBy field
+  const currentUserId = mockAuth.currentUserId || "SYSTEM";
+  
   const roleDefaults = {
     permissionIds: [] as string[],
     color: "from-slate-500 to-slate-700",
     description: "",
+    isSystem: false,
+    createdBy: currentUserId,
   };
   const newRole = {
     ...roleDefaults,
     ...(payload as Record<string, unknown>),
-    id: `r${Date.now()}`,
+    id: `r${nextRoleNumber}`,
     createdAt: new Date().toISOString(),
   } as Role;
   db.roles.push(newRole);
@@ -657,6 +904,10 @@ mockClient.register("POST", "/roles", async ({ body }) => {
 mockClient.register("PUT", "/roles/:id", async ({ pathParams, body }) => {
   const index = db.roles.findIndex((r) => r.id === pathParams.id);
   if (index === -1) return notFoundError(`Role ${pathParams.id}`);
+  // Prevent modification of Super Admin only
+  if (db.roles[index].id === "r1") {
+    return badRequestError("Super Admin role cannot be modified");
+  }
   const payload = (body || {}) as Partial<Role>;
   const isPermissionOnlyUpdate =
     Array.isArray(payload.permissionIds) && Object.keys(payload).length === 1;
@@ -672,6 +923,10 @@ mockClient.register("PUT", "/roles/:id", async ({ pathParams, body }) => {
 mockClient.register("PATCH", "/roles/:id", async ({ pathParams, body }) => {
   const index = db.roles.findIndex((r) => r.id === pathParams.id);
   if (index === -1) return notFoundError(`Role ${pathParams.id}`);
+  // Prevent modification of Super Admin only
+  if (db.roles[index].id === "r1") {
+    return badRequestError("Super Admin role cannot be modified");
+  }
   const payload = (body || {}) as Partial<Role>;
   db.roles[index] = { ...db.roles[index], ...payload };
   return successResponse(db.roles[index], "Role updated");
@@ -680,8 +935,9 @@ mockClient.register("PATCH", "/roles/:id", async ({ pathParams, body }) => {
 mockClient.register("DELETE", "/roles/:id", async ({ pathParams }) => {
   const index = db.roles.findIndex((r) => r.id === pathParams.id);
   if (index === -1) return notFoundError(`Role ${pathParams.id}`);
+  // Prevent deletion of Super Admin only
   if (db.roles[index].id === "r1") {
-    return badRequestError("Super Admin cannot be deleted");
+    return badRequestError("Super Admin role cannot be deleted");
   }
   db.roles.splice(index, 1);
   return successResponse({ ok: true }, "Role deleted");
@@ -754,15 +1010,7 @@ mockClient.register("GET", "/navigation", async () =>
   successResponse(structuredClone(db.navigation), "Navigation retrieved"),
 );
 
-/* ─────────────── DEPARTMENTS ─────────────── */
 
-mockClient.register("GET", "/departments", async ({ queryParams }) => {
-  const { rows, pagination } = applyListQuery(db.departments, queryParams, {
-    searchFields: ["name", "description", "lead"],
-    sortFields: ["name"],
-  });
-  return successResponse(rows, "Departments retrieved", pagination);
-});
 
 /* ─────────────── LOGS ─────────────── */
 

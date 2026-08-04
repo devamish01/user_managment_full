@@ -6,6 +6,8 @@ interface SuccessResponseOptions <T =unknown> {
     message:string;
     data?: T;
     statusCode?: number;
+    meta?: Record<string, unknown>;
+    errors?: unknown;
 }
 
 
@@ -14,15 +16,39 @@ res,
 message,
 data,
 statusCode =200,
+meta = {},
+errors = null,
 
 }: SuccessResponseOptions<T>): Response => {
  return res.status(statusCode).json({
     success:true,
+    status: statusCode,
     message,
     data,
+    meta,
+    errors,
  });
 
 };
+
+export const createdResponse = <T>({
+  res,
+  message,
+  data,
+  statusCode = 201,
+  meta = {},
+  errors = null,
+}: SuccessResponseOptions<T>): Response => {
+  return res.status(statusCode).json({
+    success: true,
+    status: statusCode,
+    message,
+    data,
+    meta,
+    errors,
+  });
+};
+
 interface ErrorResponseOptions {
   res: Response;
   message: string;
@@ -39,7 +65,10 @@ export const errorResponse = ({
 }: ErrorResponseOptions) : Response => {
     return res.status(statusCode).json({
           success:false,
+    status: statusCode,
     message,
+    data: null,
+    meta: {},
     errors,
  });
     

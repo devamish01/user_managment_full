@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { User, Role, Permission, Department, ActivityLog, NavigationItem } from "@/lib/types";
+import type { User, Role, Permission, ActivityLog, NavigationItem } from "@/lib/types";
 import { CurrentUserPermissions } from "@/lib/permissions";
 import { UserQueryParams, GenericQueryParams, Pagination } from "@/api";
 
@@ -7,7 +7,6 @@ export interface StoreState {
   users: User[];
   roles: Role[];
   permissions: Permission[];
-  departments: Department[];
   logs: ActivityLog[];
   navigation: NavigationItem[];
   pagination: Record<string, Pagination>;
@@ -33,7 +32,6 @@ export interface StoreState {
   getLogs: (params?: GenericQueryParams) => Promise<void>;
   addLog: (log: Omit<ActivityLog, "id" | "timestamp" | "ip">) => Promise<void>;
   
-  getDepartments: () => Promise<void>;
   getNavigation: () => Promise<void>;
 
   /* auth simulation */

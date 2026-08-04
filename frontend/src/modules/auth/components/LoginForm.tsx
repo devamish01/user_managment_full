@@ -21,6 +21,7 @@ import { useAuth } from "../hooks";
 import { UserSwitcher } from "./UserSwitcher";
 import { DEMO_ACCOUNTS, ROLE_DISPLAY } from "@/core/authorization";
 import { dashboardRoutesConfig } from "@/modules/dashboard.routes";
+import { authRoutesConfig } from "../routes";
 
 export const LoginForm: React.FC = () => {
   const { login, loading, error, isAuthenticated, currentUser } = useAuth();
@@ -233,6 +234,17 @@ export const LoginForm: React.FC = () => {
             );
           })}
         </div>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-[#0e1418]/10 pt-5 text-xs text-[#0e1418]/70">
+        <p>Don't have an account?</p>
+        <button
+          type="button"
+          onClick={() => navigate(authRoutesConfig.register())}
+          className="font-semibold uppercase tracking-[0.22em] text-[#0e1418] underline decoration-[#0e1418]/30"
+        >
+          Register
+        </button>
       </div>
     </form>
   );

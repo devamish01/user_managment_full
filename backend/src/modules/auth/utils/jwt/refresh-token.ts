@@ -10,6 +10,6 @@ export const generateRefreshToken = (
     env.JWT_REFRESH_SECRET,
     {
       expiresIn: env.JWT_REFRESH_EXPIRES_IN,
-    },
+    } as jwt.SignOptions,
   );
 };

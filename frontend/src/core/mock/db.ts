@@ -1,7 +1,6 @@
 import { mockUsers } from "@/mocks/users";
 import { mockRoles } from "@/mocks/roles";
 import { mockPermissions } from "@/mocks/permissions";
-import { mockDepartments } from "@/mocks/departments";
 import { mockLogs } from "@/mocks/logs";
 import { mockNavigation } from "@/mocks/navigation";
 
@@ -17,7 +16,6 @@ export const db = {
   users: [...mockUsers],
   roles: [...mockRoles],
   permissions: [...mockPermissions],
-  departments: [...mockDepartments],
   logs: [...mockLogs],
   navigation: structuredClone(mockNavigation),
 };

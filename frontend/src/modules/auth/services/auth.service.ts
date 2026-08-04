@@ -10,7 +10,7 @@
 
 import { AuthApi } from "../api";
 import type { User } from "@/lib/types";
-import type { AuthSession } from "../types";
+import type { AuthSession, RegisterCredentials } from "../types";
 
 export class AuthService {
   static async getSuperAdminPassword(): Promise<string> {
@@ -29,20 +29,23 @@ export class AuthService {
 
   static async getCurrentUser(): Promise<User | null> {
     const res = await AuthApi.getCurrentUser();
-    console.log("CURRENT USER FROM STORE", res);
     return res.success ? res.data : null;
   }
 
   static async login(credentials: { email: string; password: string }): Promise<AuthSession> {
     const res = await AuthApi.login(credentials);
-        console.log('login time', res)
-
     if (!res.success || !res.data) throw new Error(res.message || "Login failed");
     return res.data.session;
   }
 
   static async logout(): Promise<void> {
     await AuthApi.logout();
+  }
+
+  static async register(payload: RegisterCredentials): Promise<User> {
+    const res = await AuthApi.register(payload);
+    if (!res.success || !res.data) throw new Error(res.message || "Registration failed");
+    return res.data;
   }
 
   static async switchUser(roleId: string): Promise<User | null> {

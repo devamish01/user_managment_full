@@ -67,6 +67,7 @@ export const Dashboard = () => {
   const active = users.filter((u) => u.status === "active").length;
   const inactive = users.filter((u) => u.status === "inactive").length;
   const blocked = users.filter((u) => u.status === "blocked").length;
+  const pending = users.filter((u) => u.status === "pending").length;
 
   const recentUsers = [...users]
     .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
@@ -102,7 +103,7 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatCard
           title="Total Users List"
           value={users.length}
@@ -126,11 +127,19 @@ export const Dashboard = () => {
           positive={false}
         />
         <StatCard
-          title="Permissions"
-          value={permissions.length}
-          change="+3.8%"
-          icon={<Key size={20} />}
-          gradient="from-amber-500 to-orange-500"
+          title="Blocked Users"
+          value={blocked}
+          change="+1.2%"
+          icon={<UserX size={20} />}
+          gradient="from-red-500 to-rose-600"
+          positive={false}
+        />
+        <StatCard
+          title="Pending Users"
+          value={pending}
+          change="+5.0%"
+          icon={<Activity size={20} />}
+          gradient="from-amber-500 to-orange-600"
         />
       </div>
 
@@ -181,6 +190,7 @@ export const Dashboard = () => {
               { label: "Active", count: active, icon: <UserCheck size={16} />, color: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
               { label: "Inactive", count: inactive, icon: <UserX size={16} />, color: "bg-slate-500", text: "text-slate-600 dark:text-slate-400" },
               { label: "Blocked", count: blocked, icon: <UserX size={16} />, color: "bg-red-500", text: "text-red-600 dark:text-red-400" },
+              { label: "Pending", count: pending, icon: <Activity size={16} />, color: "bg-amber-500", text: "text-amber-600 dark:text-amber-400" },
             ].map((s) => {
               const pct = users.length ? Math.round((s.count / users.length) * 100) : 0;
               return (

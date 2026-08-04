@@ -62,9 +62,15 @@ export const authMiddleware = async (
     });
   }
 
-
   const token = parts[1];
 
+  if (!token) {
+    throw new AppError({
+      message: "Authorization token missing.",
+      statusCode: HTTP_STATUS.UNAUTHORIZED,
+      errorCode: "TOKEN_MISSING",
+    });
+  }
 
   // Verify JWT
   const payload = verifyAccessToken(

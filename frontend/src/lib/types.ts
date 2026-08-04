@@ -1,4 +1,4 @@
-export type Status = "active" | "inactive" | "blocked";
+export type Status = "active" | "inactive" | "blocked" | "pending";
 
 export interface Permission {
   id: string;
@@ -16,16 +16,10 @@ export interface Role {
   permissionIds: string[];
   createdAt: string;
   isSystem?: boolean;
+  createdBy?: string; // User ID who created this role
 }
 
-export interface Department {
-  id: string;
-  name: string;
-  description: string;
-  lead: string;
-  memberCount: number;
-  color: string;
-}
+
 
 export interface User {
   id: string;
@@ -39,21 +33,24 @@ export interface User {
   avatar?: string;
   roleId: string;
   role: string;
-  departmentId: string;
   status: Status;
-  jobTitle: string;
   location: string;
   address: string;
   lastActive: string;
   approvedAt?: string;
   approvedBy?: string;
+  /** Resolved approver name (populated by frontend from users data) */
+  approvedByName?: string;
 
   createdAt: string;
   updatedAt: string;
   bio?: string;
+  jobTitle?: string;
   /** Optional password hash — mock backend only; real backend would store a hash. */
   password?: string;
   permissionIds?: string[]; // extra overrides (not used in role)
+  /** Whether the user is protected from modification/deletion */
+  isProtected?: boolean;
 }
 
 export interface ActivityLog {

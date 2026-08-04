@@ -11,9 +11,13 @@ export interface UseUserFiltersReturn {
   roleFilter: string;
   statusFilter: string;
   dateRange: DateRangeValue;
+  period: string;
+  days?: number | undefined;
   setRoleFilter: (role: string) => void;
   setStatusFilter: (status: string) => void;
   setDateRange: (value: DateRangeValue) => void;
+  setPeriod: (p: string) => void;
+  setDays: (d?: number) => void;
   resetFilters: () => void;
   // From shared hooks
   searchQuery: string;
@@ -38,6 +42,8 @@ export function useUserFilters(): UseUserFiltersReturn {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ startDate: "", endDate: "" });
+  const [period, setPeriod] = useState<string>("all");
+  const [days, setDays] = useState<number | undefined>(undefined);
   const [sortKey, setSortKey] = useState("id");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
@@ -54,6 +60,8 @@ export function useUserFilters(): UseUserFiltersReturn {
     setRoleFilter("all");
     setStatusFilter("all");
     setDateRange({ startDate: "", endDate: "" });
+    setPeriod("all");
+    setDays(undefined);
     clear();
     reset();
     setSortKey("id");
@@ -64,9 +72,13 @@ export function useUserFilters(): UseUserFiltersReturn {
     roleFilter,
     statusFilter,
     dateRange,
+    period,
+    days,
     setRoleFilter,
     setStatusFilter,
     setDateRange,
+    setPeriod,
+    setDays,
     resetFilters,
     searchQuery: query,
     debouncedSearch: debouncedQuery,

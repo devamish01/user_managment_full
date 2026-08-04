@@ -15,11 +15,15 @@ export interface UseUserFormReturn {
 }
 
 const emptyForm = (roleId: string): UserFormState => ({
-  name: "",
+  firstName: "",
+  lastName: "",
   email: "",
   phone: "",
   roleId,
   status: "active",
+  password: "",
+  username: "",
+  isProtected: false,
 });
 
 export function useUserForm(defaultRoleId: string = ""): UseUserFormReturn {

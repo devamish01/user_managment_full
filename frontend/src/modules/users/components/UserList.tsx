@@ -24,7 +24,6 @@ import type { PaginationMeta } from "@/shared/types/pagination";
 interface UserListProps {}
 
 export const UserList: React.FC<UserListProps> = () => {
-  console.count('render user list')
   const { roles } = useStore();
   const { users, loading, error, getUsers, createUser, updateUser, deleteUser, pagination } = useUsersStore();
   
@@ -40,6 +39,10 @@ export const UserList: React.FC<UserListProps> = () => {
     setStatusFilter,
     setDateRange,
     resetFilters,
+    period,
+    setPeriod,
+    days,
+    setDays,
     searchQuery,
     debouncedSearch,
     setSearchQuery,
@@ -84,7 +87,7 @@ export const UserList: React.FC<UserListProps> = () => {
   
   // Fetch users when params change
   React.useEffect(() => {
-    getUsers({
+    const params: any = {
       search: debouncedSearch || undefined,
       roleId: roleFilter === "all" ? undefined : roleFilter,
       status: statusFilter === "all" ? undefined : statusFilter,
@@ -92,8 +95,19 @@ export const UserList: React.FC<UserListProps> = () => {
       limit,
       sort: sortKey,
       order: sortDir,
-    });
-  }, [getUsers, debouncedSearch, roleFilter, statusFilter, sortKey, sortDir, page, limit]);
+    };
+
+    // If explicit date range selected, it takes precedence
+    if (dateRange.startDate || dateRange.endDate) {
+      if (dateRange.startDate) params.startDate = dateRange.startDate;
+      if (dateRange.endDate) params.endDate = dateRange.endDate;
+    } else if (period && period !== "all") {
+      params.period = period;
+      if (period === "custom" && days) params.days = days;
+    }
+
+    getUsers(params);
+  }, [getUsers, debouncedSearch, roleFilter, statusFilter, sortKey, sortDir, page, limit, dateRange, period, days]);
 
   // Reset selection whenever filters / data change.
   React.useEffect(() => {
@@ -154,11 +168,17 @@ export const UserList: React.FC<UserListProps> = () => {
   const openEdit = (user: User) => {
     setEditingUser(user);
     initializeForm({
-      name: user.name,
+      firstName: user.firstName,
+      lastName: user.lastName,
       email: user.email,
       phone: user.phone,
+      username: user.username,
       roleId: user.roleId,
       status: user.status,
+      location: user.location,
+      address: user.address,
+      bio: user.bio,
+      jobTitle: user.jobTitle,
     }, roles);
     setFormModalOpen(true);
   };
@@ -168,17 +188,11 @@ export const UserList: React.FC<UserListProps> = () => {
   const saveForm = async () => {
     try {
       if (editingUser) {
-        await updateUser(editingUser.id, form);
+        const { password, ...updatePayload } = form;
+        await updateUser(editingUser.id, updatePayload);
         toast({ type: "success", title: "User updated" });
       } else {
-        await createUser({
-          ...form,
-          departmentId: "d1",
-          jobTitle: "",
-          location: "",
-          address: "",
-          bio: "",
-        });
+        await createUser(form);
         toast({ type: "success", title: "User created" });
       }
       closeForm();
@@ -445,6 +459,52 @@ export const UserList: React.FC<UserListProps> = () => {
         </div>
       )}
 
+      {/* Period tabs + More dropdown (All, Daily, Weekly, Monthly, Yearly, More...) */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          {[
+            { key: "all", label: "All" },
+            { key: "daily", label: "Daily" },
+            { key: "weekly", label: "Weekly" },
+            { key: "monthly", label: "Monthly" },
+            { key: "yearly", label: "Yearly" },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => { setPeriod(t.key); setDays(undefined); setDateRange({ startDate: "", endDate: "" }); setPage(1); }}
+              className={`px-3 py-1 rounded-md text-sm ${period === t.key ? "bg-primary text-white" : "bg-transparent text-muted-foreground border border-border"}`}
+            >
+              {t.label}
+            </button>
+          ))}
+
+          <div>
+            <Dropdown
+              trigger={<button className="px-3 py-1 rounded-md text-sm bg-transparent border border-border">More</button>}
+            >
+              {(close) => (
+                <>
+                  {[15, 30, 60, 90, 180].map((n) => (
+                    <DropdownItem
+                      key={n}
+                      onClick={() => {
+                        setPeriod("custom");
+                        setDays(n);
+                        setDateRange({ startDate: "", endDate: "" });
+                        setPage(1);
+                        close();
+                      }}
+                    >
+                      Last {n} days
+                    </DropdownItem>
+                  ))}
+                </>
+              )}
+            </Dropdown>
+          </div>
+        </div>
+      </div>
+
       {selectedIds.length > 0 && (
         <div className="flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 md:flex-row md:items-center md:justify-between">
           <p className="text-sm">
@@ -499,11 +559,22 @@ export const UserList: React.FC<UserListProps> = () => {
 
       <SharedModal open={formModalOpen} onClose={closeForm} size="lg" title={editingUser ? "Edit User" : "Add New User"}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="md:col-span-2 space-y-1.5"><label className="text-sm font-medium">Full Name *</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.name} onChange={(e) => setField("name", e.target.value)} /></div>
+          <div className="space-y-1.5"><label className="text-sm font-medium">First Name *</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.firstName} onChange={(e) => setField("firstName", e.target.value)} /></div>
+          <div className="space-y-1.5"><label className="text-sm font-medium">Last Name *</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.lastName} onChange={(e) => setField("lastName", e.target.value)} /></div>
           <div className="space-y-1.5"><label className="text-sm font-medium">Email *</label><input type="email" className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.email} onChange={(e) => setField("email", e.target.value)} /></div>
+          {!editingUser && (
+            <div className="space-y-1.5"><label className="text-sm font-medium">Username (optional)</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.username || ""} onChange={(e) => setField("username", e.target.value)} placeholder="Auto-generated from name if empty" /></div>
+          )}
           <div className="space-y-1.5"><label className="text-sm font-medium">Mobile</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.phone} onChange={(e) => setField("phone", e.target.value)} /></div>
           <div className="space-y-1.5"><label className="text-sm font-medium">Role</label><select className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.roleId} onChange={(e) => setField("roleId", e.target.value)}>{roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></div>
           <div className="space-y-1.5"><label className="text-sm font-medium">Status</label><select className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.status} onChange={(e) => setField("status", e.target.value as Status)}><option value="active">Active</option><option value="inactive">Inactive</option><option value="blocked">Blocked</option></select></div>
+          <div className="space-y-1.5"><label className="text-sm font-medium">Location</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.location || ""} onChange={(e) => setField("location", e.target.value)} /></div>
+          <div className="space-y-1.5"><label className="text-sm font-medium">Job Title</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.jobTitle || ""} onChange={(e) => setField("jobTitle", e.target.value)} /></div>
+          <div className="space-y-1.5"><label className="text-sm font-medium">Address</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.address || ""} onChange={(e) => setField("address", e.target.value)} /></div>
+          <div className="space-y-1.5"><label className="text-sm font-medium">Bio</label><textarea className="flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={form.bio || ""} onChange={(e) => setField("bio", e.target.value)} /></div>
+          {!editingUser && (
+            <div className="space-y-1.5"><label className="text-sm font-medium">Password *</label><input type="password" className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.password || ""} onChange={(e) => setField("password", e.target.value)} /></div>
+          )}
         </div>
         <div className="flex justify-end gap-2 mt-6"><SharedButton variant="outline" onClick={closeForm}>Cancel</SharedButton><SharedButton onClick={saveForm}>{editingUser ? "Save Changes" : "Create User"}</SharedButton></div>
       </SharedModal>

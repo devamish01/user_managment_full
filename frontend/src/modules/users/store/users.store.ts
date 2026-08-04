@@ -7,6 +7,7 @@
 
 import { create } from "zustand";
 import type { User } from "@/lib/types";
+import type { UserFormState } from "../types";
 import { UserService } from "../services";
 import type { UserQueryParams, Pagination } from "@/api";
 
@@ -26,7 +27,7 @@ interface UsersState {
 interface UsersActions {
   getUsers: (params?: UserQueryParams) => Promise<void>;
   createUser: (
-    data: Omit<User, "id" | "createdAt" | "lastActive">
+    data: UserFormState
   ) => Promise<void>;
   updateUser: (id: string, data: Partial<User>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
@@ -34,6 +35,8 @@ interface UsersActions {
 }
 
 export type UsersStore = UsersState & UsersActions;
+
+export type UsersStoreState = UsersStore;
 
 export const useUsersStore = create<UsersStore>((set, get) => ({
   users: [],
@@ -49,7 +52,7 @@ export const useUsersStore = create<UsersStore>((set, get) => ({
 
     try {
       const response = await UserService.getUsers(params);
-
+      console.log("response", response);
       if (!response.success) {
         throw new Error(response.message || "Failed to load users");
       }

@@ -43,8 +43,9 @@ const colorFor: Record<string, string> = {
 };
 
 export const ActivityLogs = () => {
-  const { logs } = useStore();
-  const { users } = useUsersStore();
+  const store = useStore();
+  const logs = store.logs ?? [];
+  const users = (useUsersStore().users ?? []);
 
   const { toast } = useToast();
   const [search, setSearch] = React.useState("");
@@ -56,11 +57,10 @@ export const ActivityLogs = () => {
       const s = search.toLowerCase();
       if (!s) return true;
       const u = users.find((x) => x.id === l.userId);
-      return (
-        l.action.toLowerCase().includes(s) ||
-        l.target.toLowerCase().includes(s) ||
-        (u?.name.toLowerCase().includes(s) ?? false)
-      );
+      const action = (l.action || "").toLowerCase();
+      const target = (l.target || "").toLowerCase();
+      const uname = (u?.name || "").toLowerCase();
+      return action.includes(s) || target.includes(s) || uname.includes(s);
     });
 
   // Group by day

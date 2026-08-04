@@ -30,6 +30,7 @@ export const PERM = {
   USERS_TAB_ACTIVE: "users.tab_active",
   USERS_TAB_INACTIVE: "users.tab_inactive",
   USERS_TAB_BLOCKED: "users.tab_blocked",
+  USERS_TAB_PENDING: "users.tab_pending",
   USERS_SEC_DETAILS: "users.sec_details",
   USERS_SEC_SECURITY: "users.sec_security",
 

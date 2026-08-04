@@ -3,7 +3,7 @@
  *
  * After the auth/authz split this component owns only:
  *   - composition of feature stores (users, roles, permissions)
- *   - departments, logs, navigation
+ *   - logs, navigation
  *   - the public `StoreState` shape so existing consumers keep working
  *
  * Authentication identity (`currentUser`, session, isAuthenticated) is now
@@ -12,7 +12,7 @@
  */
 
 import * as React from "react";
-import type { Department, ActivityLog } from "@/lib/types";
+import type { ActivityLog } from "@/lib/types";
 import { SystemService } from "@/services/system.service";
 import { useAuth } from "@/modules/auth/hooks";
 import { AuthService } from "@/modules/auth/services";
@@ -22,6 +22,7 @@ import type { GenericQueryParams } from "@/api";
 import useRolesStore from "@/modules/roles/store";
 import usePermissionsStore from "@/modules/permissions/store";
 import useNavigationStore from "@/modules/navigation/store";
+import useUsersStore from "@/modules/users/store";
 
 import { StoreCtx } from "../context/StoreContext";
 
@@ -30,6 +31,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   
   /* ── Feature module stores (composition) ────────────────────────── */
   const rolesStore = useRolesStore();
+  const usersStore = useUsersStore();
 
   const permissionsStore = usePermissionsStore({
     onRolesRefresh: rolesStore.getRoles,
@@ -51,24 +53,19 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   const navigationStore = useNavigationStore();
 
   /* ── Global state that is not owned by any feature module ──────── */
-  const [departments, setDepartments] = React.useState<Department[]>([]);
-  const [logs, setLogs] = React.useState<ActivityLog[]>([]);
+  // const [logs, setLogs] = React.useState<ActivityLog[]>([]);
 
-  /* ── Global actions (logs, departments) ─────────────────────────── */
-  const getLogs = React.useCallback(async (params?: GenericQueryParams) => {
-    const res = await SystemService.getLogs(params);
-    if (res.success && res.data) setLogs(res.data);
-  }, []);
+  // /* ── Global actions (logs) ─────────────────────────── */
+  // const getLogs = React.useCallback(async (params?: GenericQueryParams) => {
+  //   const res = await SystemService.getLogs(params);
+  //   if (res.success && res.data) setLogs(res.data);
+  // }, []);
 
-  const addLog = React.useCallback(async (log: Omit<ActivityLog, "id" | "timestamp" | "ip">) => {
-    const res = await SystemService.addLog(log);
-    if (res.success) await getLogs();
-  }, [getLogs]);
+  // const addLog = React.useCallback(async (log: Omit<ActivityLog, "id" | "timestamp" | "ip">) => {
+  //   const res = await SystemService.addLog(log);
+  //   if (res.success) await getLogs();
+  // }, [getLogs]);
 
-  const getDepartments = React.useCallback(async () => {
-    const res = await SystemService.getDepartments();
-    if (res.success && res.data) setDepartments(res.data);
-  }, []);
 
   /* ── Global bootstrap sequence (no auth here) ───────────────────── */
   const loadInitialData = React.useCallback(async () => {
@@ -76,8 +73,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
       await rolesStore.getRoles();
       await permissionsStore.getPermissions();
 
-      await getDepartments();
-      await getLogs();
+      // await getLogs();
       await navigationStore.getNavigation();
 
     } catch (err) {
@@ -113,17 +109,16 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
       // Feature module state + actions
       ...rolesStore,
       ...permissionsStore,
+      ...usersStore,
   
       // Global state
-      departments,
-      logs,
+      // logs,
       // Navigation state + action — sourced from the navigation feature store
       // so the public StoreState shape stays backward-compatible.
       navigation: navigationStore.navigation,
       // Global actions
-      getLogs,
-      addLog,
-      getDepartments,
+      // getLogs,
+      // addLog,
       getNavigation: navigationStore.getNavigation,
       authorizationReady,
       // Auth / current user (sourced from auth store)
@@ -147,13 +142,12 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     [
       rolesStore,
       permissionsStore,
-      departments,
-      logs,
+      usersStore,
+      // logs,
       navigationStore,
       authorizationReady,
-      getLogs,
-      addLog,
-      getDepartments,
+      // getLogs,
+      // addLog,
       currentUser,
       handleRoleSwitch,
       hasPermission,

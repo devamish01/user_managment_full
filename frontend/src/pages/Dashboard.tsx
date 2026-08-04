@@ -5,7 +5,7 @@ import {
   Activity,
   ArrowUpRight,
   ArrowDownRight,
-  UserPlus,
+  // UserPlus,
   UserCheck,
   UserX,
 } from "lucide-react";
@@ -59,7 +59,7 @@ const StatCard = ({
 
 export const Dashboard = () => {
   const { roles, permissions, logs, currentRoleId } = useStore();
-  const { users, loading: usersLoading, pagination } = useUsersStore();
+  const { users, loading: usersLoading, pagination, getUsers } = useUsersStore();
   const navigate = useNavigate();
   const canCreate = currentRoleId === "r1" || currentRoleId === "r2" || currentRoleId === "r3";
   const canViewLogs = currentRoleId === "r1" || currentRoleId === "r2";
@@ -71,8 +71,15 @@ export const Dashboard = () => {
   const recentUsers = [...users]
     .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
     .slice(0, 5);
-  const recentLogs = logs.slice(0, 6);
-
+// const recentLogs = Array.isArray(logs) ? logs.slice(0, 6) : [][...users]
+//     .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+//     .slice(0, 5);
+  React.useEffect(() => {
+    if (!users || users.length === 0) {
+      // Ensure dashboard has user data on first visit / refresh
+      getUsers().catch(() => {});
+    }
+  }, [getUsers, users]);
   if (usersLoading) {
     return <DashboardSkeleton />;
   }
@@ -94,15 +101,15 @@ export const Dashboard = () => {
               <Activity size={14} /> View Logs
             </Button>
           )}
-          {canCreate && (
+          {/* {canCreate && (
             <Button onClick={() => navigate(userRoutesConfig.create())}>
               <UserPlus size={14} /> New User
             </Button>
-          )}
+          )} */}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <StatCard
           title="Total Users List"
           value={pagination.stats?.total ?? 0}
@@ -260,7 +267,7 @@ export const Dashboard = () => {
             )}
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentLogs.map((log) => {
+            {/* {recentLogs.map((log) => {
               const u = users.find((x) => x.id === log.userId);
               return (
                 <div key={log.id} className="flex gap-3">
@@ -275,7 +282,7 @@ export const Dashboard = () => {
                   </div>
                 </div>
               );
-            })}
+            })} */}
           </CardContent>
         </Card>
       </div>

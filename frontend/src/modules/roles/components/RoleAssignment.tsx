@@ -80,7 +80,7 @@ export const RoleAssignment = () => {
   React.useEffect(() => {
     getRoles();
   }, [getRoles]);
-
+// console.log("roles", roles);
   // Initialise selectedRoleId once roles are loaded — without this, refreshing
   // the page leaves the selection empty because roles starts as [].
   React.useEffect(() => {
@@ -189,10 +189,10 @@ export const RoleAssignment = () => {
       )}
 
       <SharedModal open={createOpen} onClose={() => setCreateOpen(false)} size="md" title="Create Role">
-        <div className="space-y-4"><div className="space-y-3"><Label>Name</Label><SharedInput value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})}/><Label>Description</Label><Textarea value={formState.description} onChange={e => setFormState({...formState, description: e.target.value})}/></div><div className="flex justify-end gap-2"><SharedButton variant="outline" onClick={() => setCreateOpen(false)}>Cancel</SharedButton><SharedButton onClick={handleCreate}>Create</SharedButton></div></div>
+        <div className="space-y-4"><div className="space-y-3"><Label>Name</Label><SharedInput value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})}/><Label>Description</Label><Textarea value={formState.description} onChange={e => setFormState({...formState, description: e.target.value})}/><Label>Color</Label><div className="grid grid-cols-3 gap-2">{gradients.map((g) => (<button key={g} type="button" onClick={() => setFormState({...formState, color: g})} className={`h-8 rounded-lg border-2 transition-all ${formState.color === g ? "border-primary" : "border-transparent"}`} style={{background: `linear-gradient(to right, ${g.replace("from-", "").replace("to-", "")})`}} title={g}/>))}</div></div><div className="flex justify-end gap-2"><SharedButton variant="outline" onClick={() => setCreateOpen(false)}>Cancel</SharedButton><SharedButton onClick={handleCreate}>Create</SharedButton></div></div>
       </SharedModal>
       <SharedModal open={!!editRoleObj} onClose={() => setEditRoleObj(null)} size="md" title="Edit Role">
-        <div className="space-y-4"><div className="space-y-3"><Label>Name</Label><SharedInput value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})}/><Label>Description</Label><Textarea value={formState.description} onChange={e => setFormState({...formState, description: e.target.value})}/></div><div className="flex justify-end gap-2"><SharedButton variant="outline" onClick={() => setEditRoleObj(null)}>Cancel</SharedButton><SharedButton onClick={handleEdit}>Save</SharedButton></div></div>
+        <div className="space-y-4"><div className="space-y-3"><Label>Name</Label><SharedInput value={formState.name} onChange={e => setFormState({...formState, name: e.target.value})}/><Label>Description</Label><Textarea value={formState.description} onChange={e => setFormState({...formState, description: e.target.value})}/><Label>Color</Label><div className="grid grid-cols-3 gap-2">{gradients.map((g) => (<button key={g} type="button" onClick={() => setFormState({...formState, color: g})} className={`h-8 rounded-lg border-2 transition-all ${formState.color === g ? "border-primary" : "border-transparent"}`} style={{background: `linear-gradient(to right, ${g.replace("from-", "").replace("to-", "")})`}} title={g}/>))}</div></div><div className="flex justify-end gap-2"><SharedButton variant="outline" onClick={() => setEditRoleObj(null)}>Cancel</SharedButton><SharedButton onClick={handleEdit}>Save</SharedButton></div></div>
       </SharedModal>
       <SharedModal open={!!deleteRoleObj} onClose={() => setDeleteRoleObj(null)} size="sm" title="Delete Role?">
         <div className="space-y-4 text-center"><Trash2 size={40} className="mx-auto text-red-500"/><div className="flex justify-center gap-2"><SharedButton variant="outline" onClick={() => setDeleteRoleObj(null)}>Cancel</SharedButton><SharedButton variant="destructive" onClick={handleDelete}>Delete</SharedButton></div></div>

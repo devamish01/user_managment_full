@@ -3,12 +3,14 @@ import type { RegisterUserInput } from "../types/register.type.js";
 
 import { User } from "@/modules/users/model/index.js";
 import { createUserPayload } from "@/modules/users/factories/user.factory.js";
+import { USER_ROLE } from "@/modules/users/constants/user.constants.js";
 
 import { HTTP_STATUS } from "@/shared/constants/http-status.js";
 import { AppError } from "@/shared/errors/index.js";
 
 import bcrypt from "bcrypt";
 import { hashPassword } from "@/modules/auth/utils/hash-password.js";
+import { generateUserId } from "@/modules/users/utils/user-id.generator.js";
 // export const registerUserService = async () => {
 
 // };
@@ -53,19 +55,48 @@ if (existingUser) {
 
 const hashedPassword = await hashPassword(data.password);//
 
+const normalizeStatus = (status?: string) => {
+  if (!status) return "pending";
+  switch (status.toLowerCase()) {
+    case "active":
+      return "active";
+    case "inactive":
+      return "inactive";
+    case "blocked":
+      return "blocked";
+    case "pending":
+      return "pending";
+    default:
+      return "pending";
+  }
+};
 
+const getRoleFromRoleId = (roleId: string) => {
+  switch (roleId) {
+    case "r1":
+      return USER_ROLE.SUPER_ADMIN;
+    case "r2":
+      return USER_ROLE.ADMIN;
+    case "r3":
+      return USER_ROLE.MANAGER;
+    default:
+      return USER_ROLE.USER;
+  }
+};
+
+const roleId = data.roleId || "r4";
+const userId = await generateUserId();
+const normalizedStatus = normalizeStatus(data.status);
 const userPayload = createUserPayload(
   data,
   hashedPassword,
+  userId,
   {
-    role: "user",
-    status: "ACTIVE",
-    approvedAt: new Date(),
-    approvedBy: "SYSTEM",
-    // status: "PENDING",
-    // approvedAt: null,
-    // approvedBy: null,
-    // approvedBy: req.user.userId,
+    role: getRoleFromRoleId(roleId),
+    roleId,
+    status: normalizedStatus,
+    approvedAt: normalizedStatus === "pending" ? null : new Date(),
+    approvedBy: normalizedStatus === "pending" ? null : "SYSTEM",
   },
 );
 
@@ -73,5 +104,23 @@ const userPayload = createUserPayload(
 
   const { password, _id, ...userData } = user.toObject();
 
-  return userData;
+  return {
+    userId: userData.userId,
+    username: userData.username,
+    firstName: userData.firstName,
+    lastName: userData.lastName,
+    email: userData.email,
+    roleId: userData.roleId,
+    role: userData.role,
+    status: userData.status,
+    approvedAt: userData.approvedAt,
+    approvedBy: userData.approvedBy,
+    phone: userData.phone,
+    location: userData.location,
+    address: userData.address,
+    bio: userData.bio,
+    lastActive: userData.lastActive,
+    createdAt: userData.createdAt,
+    updatedAt: userData.updatedAt,
+  };
 };
