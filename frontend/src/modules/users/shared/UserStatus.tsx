@@ -1,6 +1,6 @@
 import React from "react";
 import { Users, UserCheck, UserMinus, ShieldBan, Clock } from "lucide-react";
-import { UserStatCard } from "./UserStatCard";
+import { UserStatCard } from "@/modules/users/components/UserStatCard";
 import type { User } from "@/lib/types";
 
 export interface UserStatusProps {

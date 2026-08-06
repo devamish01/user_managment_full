@@ -330,14 +330,20 @@ export const updateUser = async (id: string, data: UpdateUserInput, approvedByUs
     data.status.toLowerCase() === "active" && 
     foundUser.status !== "active";
 
-  // Prepare update data with proper conversions
-  const updateData: any = {
-    ...data,
-    email: data.email?.toLowerCase(),
-    username: data.username?.toLowerCase(),
-  };
+  // Prepare update data with proper conversions - only include fields that are provided
+  const updateData: any = { ...data };
 
-  // Convert status to lowercase
+  // Convert email to lowercase if provided
+  if (data.email) {
+    updateData.email = data.email.toLowerCase();
+  }
+
+  // Convert username to lowercase if provided
+  if (data.username) {
+    updateData.username = data.username.toLowerCase();
+  }
+
+  // Convert status to lowercase if provided
   if (data.status) {
     updateData.status = data.status.toLowerCase();
     
@@ -390,6 +396,32 @@ export const deleteUser = async (id: string, requesterRoleId?: string) => {
   assertUserNotProtected(foundUser, "delete");
 
   await User.findOneAndDelete(buildUserQueryById(id));
+
+  return { ok: true };
+};
+
+export const resetUserPassword = async (id: string, password: string) => {
+  const foundUser = await User.findOne(buildUserQueryById(id));
+  if (!foundUser) {
+    throw new AppError({
+      message: USER_MESSAGES.NOT_FOUND,
+      statusCode: HTTP_STATUS.NOT_FOUND,
+      errorCode: "USER_NOT_FOUND",
+    });
+  }
+
+  // Hash the new password
+  const { hashPassword } = await import("@/modules/auth/utils/index.js");
+  const hashedPassword = await hashPassword(password);
+
+  // Update password and updatedAt
+  foundUser.password = hashedPassword;
+  foundUser.updatedAt = new Date();
+
+  await foundUser.save();
+
+  // TODO: Revoke all active sessions of this user after password reset
+  // if (Session module supports it)
 
   return { ok: true };
 };

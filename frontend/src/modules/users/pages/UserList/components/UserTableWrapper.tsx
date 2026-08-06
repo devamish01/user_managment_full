@@ -3,7 +3,7 @@ import { SharedTable } from "@/shared/components";
 import type { TableColumn } from "@/shared/types/table";
 import type { User } from "@/lib/types";
 
-interface UserTableProps {
+interface UserTableWrapperProps {
   columns: TableColumn<User>[];
   data: User[];
   sort: {
@@ -15,21 +15,23 @@ interface UserTableProps {
   emptyMessage?: string;
 }
 
-export const UserTable: React.FC<UserTableProps> = ({
+export const UserTableWrapper: React.FC<UserTableWrapperProps> = ({
   columns,
   data,
   sort,
   onSort,
   onRowClick,
-  emptyMessage = "No data available.",
+  emptyMessage = "No users match your filters.",
 }) => (
-  <SharedTable
-    columns={columns}
-    data={data}
-    sort={sort}
-    onSort={onSort}
-    rowKey={(user) => user.id}
-    onRowClick={onRowClick}
-    emptyMessage={emptyMessage}
-  />
+  <div className="flex-1 min-h-0">
+    <SharedTable
+      columns={columns}
+      data={data}
+      sort={sort}
+      onSort={onSort}
+      rowKey={(user) => user.id}
+      onRowClick={onRowClick}
+      emptyMessage={emptyMessage}
+    />
+  </div>
 );

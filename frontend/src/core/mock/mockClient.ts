@@ -853,6 +853,73 @@ mockClient.register("DELETE", "/users/:id", async ({ pathParams }) => {
   return successResponse({ ok: true }, "User deleted");
 });
 
+mockClient.register("POST", "/users/:id/reset-password", async ({ pathParams, body }) => {
+  const index = db.users.findIndex((u) => u.id === pathParams.id);
+  if (index === -1) return notFoundError(`User ${pathParams.id}`);
+  
+  const payload = (body || {}) as { password?: string; confirmPassword?: string };
+  const errs = requireFields(payload, ["password", "confirmPassword"]);
+  if (errs.length) return validationError(errs);
+  
+  // Validate password policy (matching backend validation)
+  const password = payload.password!;
+  const passwordErrors: ApiError[] = [];
+  
+  if (password.length < 8) {
+    passwordErrors.push({
+      code: "TOO_SHORT",
+      field: "password",
+      message: "Password must be at least 8 characters",
+    });
+  }
+  if (!/[A-Z]/.test(password)) {
+    passwordErrors.push({
+      code: "MISSING_UPPERCASE",
+      field: "password",
+      message: "Password must contain at least one uppercase letter",
+    });
+  }
+  if (!/[a-z]/.test(password)) {
+    passwordErrors.push({
+      code: "MISSING_LOWERCASE",
+      field: "password",
+      message: "Password must contain at least one lowercase letter",
+    });
+  }
+  if (!/[0-9]/.test(password)) {
+    passwordErrors.push({
+      code: "MISSING_NUMBER",
+      field: "password",
+      message: "Password must contain at least one number",
+    });
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    passwordErrors.push({
+      code: "MISSING_SPECIAL_CHAR",
+      field: "password",
+      message: "Password must contain at least one special character",
+    });
+  }
+  
+  if (passwordErrors.length > 0) {
+    return validationError(passwordErrors);
+  }
+  
+  if (payload.password !== payload.confirmPassword) {
+    return validationError([
+      {
+        code: "PASSWORD_MISMATCH",
+        field: "confirmPassword",
+        message: "Passwords do not match",
+      },
+    ]);
+  }
+  
+  // Update user password (in mock, we just store it)
+  db.users[index] = { ...db.users[index], password: payload.password, updatedAt: new Date().toISOString() };
+  return successResponse({ ok: true }, "Password reset successfully");
+});
+
 /* ─────────────── ROLES ─────────────── */
 
 mockClient.register("GET", "/roles", async ({ queryParams }) => {
@@ -946,7 +1013,15 @@ mockClient.register("DELETE", "/roles/:id", async ({ pathParams }) => {
 /* ─────────────── PERMISSIONS ─────────────── */
 
 mockClient.register("GET", "/permissions", async ({ queryParams }) => {
-  const { rows, pagination } = applyListQuery(db.permissions, queryParams, {
+  // Calculate assignedRolesCount for each permission
+  const permissionsWithCount = db.permissions.map((perm: Permission) => {
+    const assignedRolesCount = db.roles.filter((role: Role) => 
+      role.permissionIds.includes(perm.id)
+    ).length;
+    return { ...perm, assignedRolesCount };
+  });
+  
+  const { rows, pagination } = applyListQuery(permissionsWithCount, queryParams, {
     searchFields: ["name", "key", "module", "description"],
     filterFields: ["module"],
     sortFields: ["name", "module", "key"],
@@ -954,10 +1029,32 @@ mockClient.register("GET", "/permissions", async ({ queryParams }) => {
   return successResponse(rows, "Permissions retrieved", pagination);
 });
 
+mockClient.register("GET", "/permissions/:id", async ({ pathParams }) => {
+  const permission = db.permissions.find((p: Permission) => p.id === pathParams.id);
+  if (!permission) return notFoundError(`Permission ${pathParams.id}`);
+  
+  const assignedRolesCount = db.roles.filter((role: Role) => 
+    role.permissionIds.includes(permission.id)
+  ).length;
+  
+  return successResponse({ ...permission, assignedRolesCount }, "Permission retrieved");
+});
+
 mockClient.register("POST", "/permissions", async ({ body }) => {
+  console.log("mockClient POST /permissions - body:", body);
   const payload = (body || {}) as Partial<Permission>;
   const errs = requireFields(payload, ["name", "key", "module"]);
   if (errs.length) return validationError(errs);
+  // Validate key format (lowercase letters and dots only) - matches backend validation
+  if (payload.key && !/^[a-z.]+$/.test(payload.key)) {
+    return validationError([
+      {
+        code: "INVALID_FORMAT",
+        field: "key",
+        message: "Key must contain only lowercase letters and dots (e.g. users.create)",
+      },
+    ]);
+  }
   if (db.permissions.some((p: Permission) => p.key === payload.key)) {
     return conflictError("A permission with this key already exists", "key");
   }
@@ -974,9 +1071,21 @@ mockClient.register("PUT", "/permissions/:id", async ({ pathParams, body }) => {
   const index = db.permissions.findIndex((p) => p.id === pathParams.id);
   if (index === -1) return notFoundError(`Permission ${pathParams.id}`);
   const payload = (body || {}) as Partial<Permission>;
-  const errs = requireFields(payload, ["name", "key", "module"]);
+  const errs = requireFields(payload, ["name", "module"]);
   if (errs.length) return validationError(errs);
-  db.permissions[index] = { ...db.permissions[index], ...payload };
+  // Validate key format if provided (lowercase letters and dots only) - matches backend validation
+  if (payload.key && !/^[a-z.]+$/.test(payload.key)) {
+    return validationError([
+      {
+        code: "INVALID_FORMAT",
+        field: "key",
+        message: "Key must contain only lowercase letters and dots (e.g. users.create)",
+      },
+    ]);
+  }
+  // Don't allow key to be updated
+  const { key, ...updateData } = payload;
+  db.permissions[index] = { ...db.permissions[index], ...updateData };
   return successResponse(db.permissions[index], "Permission replaced");
 });
 
@@ -987,7 +1096,19 @@ mockClient.register(
     const index = db.permissions.findIndex((p) => p.id === pathParams.id);
     if (index === -1) return notFoundError(`Permission ${pathParams.id}`);
     const payload = (body || {}) as Partial<Permission>;
-    db.permissions[index] = { ...db.permissions[index], ...payload };
+    // Validate key format if provided (lowercase letters and dots only) - matches backend validation
+    if (payload.key && !/^[a-z.]+$/.test(payload.key)) {
+      return validationError([
+        {
+          code: "INVALID_FORMAT",
+          field: "key",
+          message: "Key must contain only lowercase letters and dots (e.g. users.create)",
+        },
+      ]);
+    }
+    // Don't allow key to be updated
+    const { key, ...updateData } = payload;
+    db.permissions[index] = { ...db.permissions[index], ...updateData };
     return successResponse(db.permissions[index], "Permission updated");
   },
 );
@@ -995,12 +1116,22 @@ mockClient.register(
 mockClient.register("DELETE", "/permissions/:id", async ({ pathParams }) => {
   const index = db.permissions.findIndex((p) => p.id === pathParams.id);
   if (index === -1) return notFoundError(`Permission ${pathParams.id}`);
-  db.permissions.splice(index, 1);
-  db.roles.forEach((role: Role) => {
-    role.permissionIds = role.permissionIds.filter(
-      (id) => id !== pathParams.id,
+  
+  const permission = db.permissions[index];
+  
+  // Check if permission is assigned to any roles
+  const assignedRolesCount = db.roles.filter((role: Role) => 
+    role.permissionIds.includes(permission.id)
+  ).length;
+  
+  if (assignedRolesCount > 0) {
+    return badRequestError(
+      `Permission is assigned to ${assignedRolesCount} roles. Remove it from all roles before deleting.`,
+      [{ code: "PERMISSION_ASSIGNED_TO_ROLES", message: `Permission is assigned to ${assignedRolesCount} roles. Remove it from all roles before deleting.` }]
     );
-  });
+  }
+  
+  db.permissions.splice(index, 1);
   return successResponse({ ok: true }, "Permission deleted");
 });
 

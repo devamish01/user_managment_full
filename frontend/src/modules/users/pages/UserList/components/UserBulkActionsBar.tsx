@@ -1,12 +1,12 @@
 import React from "react";
 import { SharedButton } from "@/shared/components";
 
-interface UserBulkActionsProps {
+interface UserBulkActionsBarProps {
   selectedCount: number;
   onAction: (action: "delete" | "activate" | "deactivate" | "block") => void;
 }
 
-export const UserBulkActions: React.FC<UserBulkActionsProps> = ({ selectedCount, onAction }) => {
+export const UserBulkActionsBar: React.FC<UserBulkActionsBarProps> = ({ selectedCount, onAction }) => {
   if (selectedCount === 0) return null;
 
   return (

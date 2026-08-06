@@ -6,6 +6,7 @@ export interface IPermission {
   key: string;
   module: string;
   description: string;
+  assignedRolesCount?: number;
 }
 
 export interface IPermissionDocument extends IPermission, Document {
@@ -22,7 +23,6 @@ export interface CreatePermissionInput {
 
 export interface UpdatePermissionInput {
   name?: string;
-  key?: string;
   module?: string;
   description?: string;
 }
@@ -49,12 +49,12 @@ export interface PermissionListResponse {
 }
 
 export const PERMISSION_MESSAGES = {
-  FETCH_SUCCESS: "Permissions retrieved successfully",
-  FETCH_ONE_SUCCESS: "Permission retrieved successfully",
+  FETCH_SUCCESS: "Permissions fetched successfully",
+  FETCH_ONE_SUCCESS: "Permission fetched successfully",
   CREATE_SUCCESS: "Permission created successfully",
   UPDATE_SUCCESS: "Permission updated successfully",
   DELETE_SUCCESS: "Permission deleted successfully",
   NOT_FOUND: "Permission not found",
-  KEY_EXISTS: "A permission with this key already exists",
-  INVALID_ID: "Invalid permission ID",
+  KEY_EXISTS: "Permission key already exists",
+  ASSIGNED_TO_ROLES: "Permission is assigned to {count} roles. Remove it from all roles before deleting.",
 } as const;

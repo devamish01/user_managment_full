@@ -13,7 +13,7 @@ export interface RolesStoreState {
   getRoles: (params?: GenericQueryParams) => Promise<void>;
   createRole: (data: Omit<Role, "id" | "createdAt">) => Promise<void>;
   updateRole: (id: string, data: Partial<Role>) => Promise<void>;
-  deleteRole: (id: string) => Promise<void>;
+  deleteRole: (id: string) => Promise<{ reassignedCount: number }>;
   updateRolePermissions: (id: string, permissionIds: string[]) => Promise<void>;
 }
 
@@ -75,7 +75,10 @@ export const useRolesStore = (): RolesStoreState => {
   const deleteRole = React.useCallback(
     async (id: string) => {
       const res = await RoleService.deleteRole(id);
-      if (res.success) await refresh();
+      if (res.success) {
+        await refresh();
+        return { reassignedCount: res.data?.reassignedCount || 0 };
+      }
       else throw new Error(res.message);
     },
     [refresh],

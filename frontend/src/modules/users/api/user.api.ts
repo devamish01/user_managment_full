@@ -48,4 +48,11 @@ export class UserApi {
   static deleteUser(id: string): Promise<ApiResponse<{ ok: boolean }>> {
     return api.delete<{ ok: boolean }>(USER_DETAILS(id));
   }
+
+  static resetUserPassword(
+    id: string,
+    password: string,
+  ): Promise<ApiResponse<{ ok: boolean }>> {
+    return api.post<{ ok: boolean }>(`${USER_DETAILS(id)}/reset-password`, { password });
+  }
 }

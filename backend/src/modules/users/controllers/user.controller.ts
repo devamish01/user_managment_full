@@ -3,9 +3,9 @@ import type { AuthRequest } from "@/shared/middlewares/auth.middleware.js";
 import { successResponse, createdResponse } from "@/shared/response/index.js";
 import { USER_MESSAGES } from "@/modules/users/index.js";
 import { asyncHandler } from "@/shared/middlewares/index.js";
-import { getUsers, getUserById, createUser, updateUser, deleteUser } from "@/modules/users/index.js";
+import { getUsers, getUserById, createUser, updateUser, deleteUser, resetUserPassword } from "@/modules/users/index.js";
 import { validate } from "@/shared/middlewares/validate.middleware.js";
-import { createUserSchema, updateUserSchema, userQuerySchema } from "@/modules/users/index.js";
+import { createUserSchema, updateUserSchema, userQuerySchema, resetPasswordSchema } from "@/modules/users/index.js";
 import type { IUser } from "@/modules/users/index.js";
 
 export const getUsersController = asyncHandler(
@@ -67,6 +67,19 @@ export const deleteUserController = asyncHandler(
     return successResponse({
       res,
       message: USER_MESSAGES.DELETE_SUCCESS,
+      data: { ok: true },
+    });
+  },
+);
+
+export const resetUserPasswordController = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<Response> => {
+    const { password } = req.body;
+    await resetUserPassword(req.params.id as string, password);
+
+    return successResponse({
+      res,
+      message: "Password reset successfully",
       data: { ok: true },
     });
   },

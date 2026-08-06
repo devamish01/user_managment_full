@@ -20,6 +20,7 @@ export class PermissionApi {
   static createPermission(
     perm: Omit<Permission, "id">,
   ): Promise<ApiResponse<Permission>> {
+    console.log("PermissionApi.createPermission - sending:", perm);
     return api.post<Permission>(PERMISSIONS, perm);
   }
 

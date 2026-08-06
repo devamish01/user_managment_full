@@ -4,7 +4,7 @@
  * Reusable generic components come from @/shared/components.
  */
 
-export { UserList } from "./UserList";
 export { UserForm } from "./UserForm";
 export { UserDetails } from "./UserDetails";
+export { UserFormModal } from "./UserFormModal";
 export { UserStatCard } from "./UserStatCard";

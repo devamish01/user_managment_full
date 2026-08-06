@@ -43,11 +43,19 @@ const ModuleCard = ({ moduleName, perms, uiPerms, onEdit, onDelete }: any) => {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold">{p.name}</p>
         <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{p.description}</p>
-        <code className="mt-1.5 inline-block rounded bg-background px-1.5 py-0.5 text-[10px] text-primary">{p.key}</code>
+        <div className="mt-1.5 flex items-center gap-2">
+          <code className="inline-block rounded bg-background px-1.5 py-0.5 text-[10px] text-primary">{p.key}</code>
+          {p.assignedRolesCount !== undefined && p.assignedRolesCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] text-blue-700">
+              <Users size={10} />
+              Assigned to: {p.assignedRolesCount} Role{p.assignedRolesCount !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
       </div>
       <div className="flex shrink-0 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <button onClick={() => onEdit(p)} className="rounded-md p-1.5 text-muted-foreground hover:bg-accent"><Pencil size={12} /></button>
-        <button onClick={() => onDelete(p)} className="rounded-md p-1.5 text-red-500 hover:bg-red-500/10"><Trash2 size={12} /></button>
+        <button onClick={() => onEdit(p)} className="rounded-md p-1.5 text-muted-foreground hover:bg-accent" title="Edit"><Pencil size={12} /></button>
+        <button onClick={() => onDelete(p)} className="rounded-md p-1.5 text-red-500 hover:bg-red-500/10" title="Delete"><Trash2 size={12} /></button>
       </div>
     </div>
   );
@@ -93,15 +101,26 @@ export const Permissions = () => {
   const save = async () => {
     if (!editing) return;
     try {
-      if (creating) { await createPermission(editing as Omit<Permission, "id">); toast({ type: "success", title: "Permission created" }); }
-      else { await updatePermission(editing.id, editing); toast({ type: "success", title: "Permission updated" }); }
+      // Client-side validation for key format (lowercase letters and dots only)
+      if (creating && editing.key && !/^[a-z.]+$/.test(editing.key)) {
+        toast({ type: "error", title: "Invalid Key", description: "Key must contain only lowercase letters and dots (e.g. users.create)" });
+        return;
+      }
+      // Don't send key when updating (key cannot be edited)
+      // Don't send id when creating (backend generates it)
+      const data = creating
+        ? { name: editing.name, key: editing.key, module: editing.module, description: editing.description }
+        : { ...editing, key: undefined, id: undefined };
+      console.log("Permissions.tsx save - creating:", creating, "data:", data);
+      if (creating) { await createPermission(data); toast({ type: "success", title: "Permission created" }); }
+      else { await updatePermission(editing.id, data); toast({ type: "success", title: "Permission updated" }); }
       setEditing(null); setCreating(false);
     } catch (e: any) { toast({ type: "error", title: "Error", description: e.message }); }
   };
 
   const confirmDelete = async () => {
     try { await deletePermission(deletePerm!.id); toast({ type: "success", title: "Permission deleted" }); setDeletePerm(null); }
-    catch (e: any) { toast({ type: "error", title: "Error", description: e.message }); }
+    catch (e: any) { toast({ type: "error", title: "Cannot Delete", description: e.message }); }
   };
 
   const grouped = permissions.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase())).reduce((acc: any, p) => {
@@ -127,7 +146,7 @@ export const Permissions = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Permissions</h1>
-        <SharedButton onClick={() => { setEditing({ id: "", name: "", key: "", module: baseModules[0] || "Settings", description: "" }); setCreating(true); }}><Plus size={14} className="mr-2"/> New Permission</SharedButton>
+        <SharedButton onClick={() => { setEditing({ name: "", key: "", module: baseModules[0] || "Settings", description: "" }); setCreating(true); }}><Plus size={14} className="mr-2"/> New Permission</SharedButton>
       </div>
       <Card><CardContent className="p-4"><SharedSearch value={search} onChange={setSearch} placeholder="Search permissions..."/></CardContent></Card>
       <div className="space-y-4">{Object.keys(grouped).map(key => <ModuleCard key={key} moduleName={key} perms={grouped[key].perms} uiPerms={grouped[key].uiPerms} onEdit={(p: Permission) => { setEditing(p); setCreating(false); }} onDelete={(p: Permission) => setDeletePerm(p)} />)}</div>
@@ -137,7 +156,7 @@ export const Permissions = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5"><Label>Name</Label><SharedInput value={editing?.name} onChange={e => setEditing({ ...editing!, name: e.target.value })}/></div>
             <div className="space-y-1.5"><Label>Module</Label><Select value={editing?.module || ""} onChange={(v: string) => setEditing({ ...editing!, module: v })} options={[...baseModules.map(m => ({ label: m, value: m })), ...baseModules.map(m => ({ label: `${m} UI`, value: `${m} UI` }))]} /></div>
-            <div className="space-y-1.5 col-span-2"><Label>Key</Label><SharedInput value={editing?.key} onChange={e => setEditing({ ...editing!, key: e.target.value })}/></div>
+            <div className="space-y-1.5 col-span-2"><Label>Key</Label><SharedInput value={editing?.key} onChange={e => setEditing({ ...editing!, key: e.target.value })} disabled={!creating} className={!creating ? "bg-muted" : ""} placeholder={creating ? "e.g. users.create, permissions.view" : "Key cannot be edited after creation"}/><p className="text-xs text-muted-foreground">Lowercase letters and dots only (e.g. users.create)</p></div>
             <div className="space-y-1.5 col-span-2"><Label>Description</Label><Textarea value={editing?.description} onChange={e => setEditing({ ...editing!, description: e.target.value })}/></div>
           </div>
           <div className="flex justify-end gap-2"><SharedButton variant="outline" onClick={() => { setEditing(null); setCreating(false); }}>Cancel</SharedButton><SharedButton onClick={save}>{creating ? "Create" : "Save"}</SharedButton></div>
@@ -147,7 +166,14 @@ export const Permissions = () => {
       <SharedModal open={!!deletePerm} onClose={() => setDeletePerm(null)} size="sm" title="Delete Permission?">
         <div className="space-y-4 text-center">
           <Trash2 size={40} className="mx-auto text-red-500"/>
-          <div className="flex justify-center gap-2"><SharedButton variant="outline" onClick={() => setDeletePerm(null)}>Cancel</SharedButton><SharedButton variant="destructive" onClick={confirmDelete}>Delete</SharedButton></div>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete <strong>{deletePerm?.name}</strong>?</p>
+          {deletePerm && deletePerm.assignedRolesCount && deletePerm.assignedRolesCount > 0 && (
+            <p className="text-sm text-red-500">
+              <Users size={12} className="inline mr-1" />
+              This permission is assigned to {deletePerm.assignedRolesCount} role{deletePerm.assignedRolesCount !== 1 ? "s" : ""}. It cannot be deleted until removed from all roles.
+            </p>
+          )}
+          <div className="flex justify-center gap-2"><SharedButton variant="outline" onClick={() => setDeletePerm(null)}>Cancel</SharedButton><SharedButton variant="destructive" onClick={confirmDelete} disabled={deletePerm && deletePerm.assignedRolesCount && deletePerm.assignedRolesCount > 0}>Delete</SharedButton></div>
         </div>
       </SharedModal>
     </div>

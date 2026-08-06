@@ -6,6 +6,7 @@ export interface Permission {
   key: string;
   module: string;
   description: string;
+  assignedRolesCount?: number;
 }
 
 export interface Role {
@@ -17,6 +18,7 @@ export interface Role {
   createdAt: string;
   isSystem?: boolean;
   createdBy?: string; // User ID who created this role
+  isDefault?: boolean; // Whether this is the default viewer role
 }
 
 

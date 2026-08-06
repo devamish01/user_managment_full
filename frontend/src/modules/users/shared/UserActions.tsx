@@ -1,26 +1,30 @@
 import React from "react";
 import { Dropdown, DropdownItem } from "@/components/ui";
-import { Eye, Pencil, UserCheck, ShieldBan, MoreHorizontal, Trash2 } from "lucide-react";
+import { Eye, Pencil, UserCheck, ShieldBan, MoreHorizontal, Trash2, Key } from "lucide-react";
 import type { User } from "@/lib/types";
 
 interface UserActionsProps {
   user: User;
   canEdit: boolean;
   canDelete: boolean;
+  canResetPassword: boolean;
   onView: () => void;
   onEdit: () => void;
   onToggleBlock: () => void;
   onDelete: () => void;
+  onResetPassword: () => void;
 }
 
 export const UserActions: React.FC<UserActionsProps> = ({
   user,
   canEdit,
   canDelete,
+  canResetPassword,
   onView,
   onEdit,
   onToggleBlock,
   onDelete,
+  onResetPassword,
 }) => {
   const isBlocked = user.status === "blocked";
 
@@ -68,6 +72,19 @@ export const UserActions: React.FC<UserActionsProps> = ({
                       <ShieldBan size={14} className="text-red-500" /> Block User
                     </>
                   )}
+                </DropdownItem>
+              </>
+            )}
+            {canResetPassword && (
+              <>
+                <div className="my-1 h-px bg-border" />
+                <DropdownItem
+                  onClick={() => {
+                    onResetPassword();
+                    close();
+                  }}
+                >
+                  <Key size={14} /> Reset Password
                 </DropdownItem>
               </>
             )}

@@ -10,6 +10,11 @@ import type { ApiResponse, GenericQueryParams } from "@/core/api";
 import type { Role } from "@/lib/types";
 import { ROLES, ROLE_DETAILS } from "./role.endpoints";
 
+export interface DeleteRoleResponse {
+  ok: boolean;
+  reassignedCount: number;
+}
+
 export class RoleApi {
   static getRoles(params?: GenericQueryParams): Promise<ApiResponse<Role[]>> {
     return api.get<Role[]>(ROLES, { params });
@@ -30,7 +35,7 @@ export class RoleApi {
     return api.patch<Role>(ROLE_DETAILS(id), { permissionIds });
   }
 
-  static deleteRole(id: string): Promise<ApiResponse<{ ok: boolean }>> {
-    return api.delete<{ ok: boolean }>(ROLE_DETAILS(id));
+  static deleteRole(id: string): Promise<ApiResponse<DeleteRoleResponse>> {
+    return api.delete<DeleteRoleResponse>(ROLE_DETAILS(id));
   }
 }

@@ -17,6 +17,8 @@ const transformRoleForFrontend = (role: any) => ({
   permissionIds: role.permissionIds || [],
   createdAt: role.createdAt,
   isSystem: role.isSystem ?? true,
+  createdBy: role.createdBy,
+  isDefault: role.roleId === "r4",
 });
 
 export const getRolesController = asyncHandler(
@@ -64,12 +66,12 @@ export const updateRoleController = asyncHandler(
 
 export const deleteRoleController = asyncHandler(
   async (req: Request, res: Response): Promise<Response> => {
-    await deleteRole(req.params.id as string);
+    const result = await deleteRole(req.params.id as string);
 
     return successResponse({
       res,
       message: ROLE_MESSAGES.DELETE_SUCCESS,
-      data: { ok: true },
+      data: { ok: true, reassignedCount: result.reassignedCount },
     });
   },
 );

@@ -38,6 +38,7 @@ export const axiosClient = {
     url: string,
     body?: unknown,
   ): Promise<ApiResponse<T>> {
+    console.log("axiosClient.request - method:", method, "url:", url, "body:", body);
     try {
       const response = await instance.request<ApiResponse<T>>({
         method,

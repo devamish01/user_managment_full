@@ -15,6 +15,7 @@ export const ROLE_MESSAGES = {
   CANNOT_MODIFY_DEFAULT_ROLE: "Cannot modify the Default Viewer role",
   DEFAULT_ROLE_NOT_FOUND: "Default Viewer role not found",
   USERS_REASSIGNED: "users were automatically moved to Default Viewer",
+  SYSTEM_ROLE_DELETE_NOT_ALLOWED: "System roles cannot be deleted.",
 } as const;
 
 export const ROLE_ERRORS = {
@@ -28,6 +29,7 @@ export const ROLE_ERRORS = {
   CANNOT_MODIFY_DEFAULT_ROLE: "Cannot modify the Default Viewer role",
   DEFAULT_ROLE_NOT_FOUND: "Default Viewer role not found",
   USERS_REASSIGNED: "users were automatically moved to Default Viewer",
+  SYSTEM_ROLE_DELETE_NOT_ALLOWED: "System roles cannot be deleted.",
 } as const;
 
 export const SUPER_ADMIN_ROLE_ID = "r1";

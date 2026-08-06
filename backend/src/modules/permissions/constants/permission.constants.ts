@@ -29,6 +29,7 @@ export const DEFAULT_PERMISSIONS = [
   { id: "p10", name: "Delete User", key: "users.delete", module: PERMISSION_MODULES.USER_MANAGEMENT, description: "Allow removing users" },
   { id: "p11", name: "Export User", key: "users.export", module: PERMISSION_MODULES.USER_MANAGEMENT, description: "Allow downloading user list" },
   { id: "p30", name: "View Full Email", key: "users.view_full_email", module: PERMISSION_MODULES.USER_MANAGEMENT, description: "Allow seeing unmasked email addresses" },
+  { id: "p45", name: "Reset User Password", key: "users.reset_password", module: PERMISSION_MODULES.USER_MANAGEMENT, description: "Allow admin or authorized users to reset another user's password" },
 
   // ── User Management UI ──
   { id: "p19", name: "Column: Name", key: "users.col_name", module: PERMISSION_MODULES.USER_MANAGEMENT_UI, description: "Show Name column" },
@@ -41,8 +42,8 @@ export const DEFAULT_PERMISSIONS = [
   { id: "p26", name: "Tab: Inactive Users", key: "users.tab_inactive", module: PERMISSION_MODULES.USER_MANAGEMENT_UI, description: "Show Inactive tab" },
   { id: "p27", name: "Tab: Blocked Users", key: "users.tab_blocked", module: PERMISSION_MODULES.USER_MANAGEMENT_UI, description: "Show Blocked tab" },
   { id: "p28", name: "Tab: Pending Users", key: "users.tab_pending", module: PERMISSION_MODULES.USER_MANAGEMENT_UI, description: "Show Pending tab" },
-  { id: "p28", name: "Section: User Details", key: "users.sec_details", module: PERMISSION_MODULES.USER_MANAGEMENT_UI, description: "Show Details section in profile" },
-  { id: "p29", name: "Section: Security", key: "users.sec_security", module: PERMISSION_MODULES.USER_MANAGEMENT_UI, description: "Show Security section in profile" },
+  { id: "p29", name: "Section: User Details", key: "users.sec_details", module: PERMISSION_MODULES.USER_MANAGEMENT_UI, description: "Show Details section in profile" },
+  { id: "p35", name: "Section: Security", key: "users.sec_security", module: PERMISSION_MODULES.USER_MANAGEMENT_UI, description: "Show Security section in profile" },
 
   // ── Role Assignment ──
   { id: "p12", name: "Create Role", key: "roles.create", module: PERMISSION_MODULES.ROLE_ASSIGNMENT, description: "Create new roles" },

@@ -4,7 +4,7 @@ import { DateRangeFilter } from "@/shared/components";
 import type { DateRangeValue } from "@/shared/components";
 import type { Role } from "@/lib/types";
 
-interface UserFiltersProps {
+interface UserFiltersBarProps {
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   roleFilter: string;
@@ -17,7 +17,7 @@ interface UserFiltersProps {
   onReset: () => void;
 }
 
-export const UserFilters: React.FC<UserFiltersProps> = ({
+export const UserFiltersBar: React.FC<UserFiltersBarProps> = ({
   searchQuery,
   onSearchQueryChange,
   roleFilter,

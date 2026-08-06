@@ -17,6 +17,7 @@ export class PermissionService {
   }
 
   static createPermission(perm: Omit<Permission, "id">) {
+    console.log("PermissionService.createPermission - sending:", perm);
     return PermissionApi.createPermission(perm);
   }
 

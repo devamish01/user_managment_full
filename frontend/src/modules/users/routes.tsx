@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useParams, useNavigate, type RouteObject } from "react-router-dom";
 import { PermissionGuard } from "@/router/guards/PermissionGuard";
-import { UserList } from "@/modules/users/components/UserList";
+import { UserList } from "@/modules/users/pages/UserList";
 import { UserDetails } from "@/modules/users/components/UserDetails";
 import { UserForm } from "@/modules/users/components/UserForm";
 

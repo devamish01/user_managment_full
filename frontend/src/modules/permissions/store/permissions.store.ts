@@ -50,6 +50,7 @@ export const usePermissionsStore = (
 
   const createPermission = React.useCallback(
     async (data: Omit<Permission, "id">) => {
+      console.log("permissions.store createPermission - data:", data);
       const res = await PermissionService.createPermission(data);
       if (res.success) await refresh();
       else throw new Error(res.message);

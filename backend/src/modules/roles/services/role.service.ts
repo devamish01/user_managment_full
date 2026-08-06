@@ -1,5 +1,8 @@
 import { Role } from "../model/index.js";
-import { ROLE_MESSAGES, SUPER_ADMIN_ROLE_ID } from "../constants/role.constants.js";
+import { User } from "@/modules/users/model/index.js";
+import { Permission } from "@/modules/permissions/model/index.js";
+import { ROLE_MESSAGES, SUPER_ADMIN_ROLE_ID, DEFAULT_VIEWER_ROLE_ID } from "../constants/role.constants.js";
+import { USER_ROLE } from "@/modules/users/constants/user.constants.js";
 import { HTTP_STATUS } from "@/shared/constants/http-status.js";
 import { AppError } from "@/shared/errors/index.js";
 import type { IRole, CreateRoleInput, UpdateRoleInput, RoleQueryInput, PaginatedRolesResponse } from "../types/role.type.js";
@@ -13,6 +16,30 @@ interface PaginatedResult<T> {
     totalPages: number;
   };
 }
+
+// Helper function to update assignedRolesCount for permissions
+const updatePermissionAssignedRolesCount = async (permissionIds: string[]): Promise<void> => {
+  if (!permissionIds.length) return;
+  
+  const rolesWithPermissions = await Role.find({ permissionIds: { $in: permissionIds } }).select("permissionIds").lean();
+  
+  const roleCountMap = new Map<string, number>();
+  for (const role of rolesWithPermissions) {
+    for (const permId of role.permissionIds) {
+      roleCountMap.set(permId, (roleCountMap.get(permId) || 0) + 1);
+    }
+  }
+
+  // Update each permission's assignedRolesCount
+  const updates = permissionIds.map(permId => 
+    Permission.updateOne(
+      { id: permId },
+      { $set: { assignedRolesCount: roleCountMap.get(permId) || 0 } }
+    )
+  );
+  
+  await Promise.all(updates);
+};
 
 export const getRoles = async (params: RoleQueryInput): Promise<PaginatedResult<IRole>> => {
   const {
@@ -78,6 +105,11 @@ export const createRole = async (data: CreateRoleInput, createdBy: string): Prom
     createdBy,
   });
 
+  // Update assignedRolesCount for permissions assigned to this role
+  if (data.permissionIds && data.permissionIds.length > 0) {
+    await updatePermissionAssignedRolesCount(data.permissionIds);
+  }
+
   return role.toObject() as unknown as IRole;
 };
 
@@ -103,6 +135,19 @@ export const updateRole = async (id: string, data: UpdateRoleInput): Promise<IRo
     }
   }
 
+  // Get the current role to compare permissionIds
+  const currentRole = await Role.findOne({ roleId: id }).lean();
+  if (!currentRole) {
+    throw new AppError({
+      message: ROLE_MESSAGES.NOT_FOUND,
+      statusCode: HTTP_STATUS.NOT_FOUND,
+      errorCode: "ROLE_NOT_FOUND",
+    });
+  }
+
+  const oldPermissionIds = currentRole.permissionIds || [];
+  const newPermissionIds = data.permissionIds || [];
+
   const role = await Role.findOneAndUpdate(
     { roleId: id },
     { $set: data },
@@ -117,25 +162,65 @@ export const updateRole = async (id: string, data: UpdateRoleInput): Promise<IRo
     });
   }
 
+  // Update assignedRolesCount for permissions that were added or removed
+  const allAffectedPermissionIds = [...new Set([...oldPermissionIds, ...newPermissionIds])];
+  if (allAffectedPermissionIds.length > 0) {
+    await updatePermissionAssignedRolesCount(allAffectedPermissionIds);
+  }
+
   return role as unknown as IRole;
 };
 
-export const deleteRole = async (id: string): Promise<void> => {
-  // Prevent deletion of Super Admin role only
-  if (id === SUPER_ADMIN_ROLE_ID) {
-    throw new AppError({
-      message: ROLE_MESSAGES.CANNOT_DELETE_SUPER_ADMIN,
-      statusCode: HTTP_STATUS.FORBIDDEN,
-      errorCode: "CANNOT_DELETE_SUPER_ADMIN",
-    });
-  }
-
-  const result = await Role.deleteOne({ roleId: id });
-  if (result.deletedCount === 0) {
+export const deleteRole = async (id: string): Promise<{ reassignedCount: number }> => {
+  // Find the role first
+  const role = await Role.findOne({ roleId: id }).lean();
+  
+  if (!role) {
     throw new AppError({
       message: ROLE_MESSAGES.NOT_FOUND,
       statusCode: HTTP_STATUS.NOT_FOUND,
       errorCode: "ROLE_NOT_FOUND",
     });
   }
+
+  // Rule 1: Protect system roles (createdBy === "SYSTEM")
+  if (role.createdBy === "SYSTEM") {
+    throw new AppError({
+      message: ROLE_MESSAGES.SYSTEM_ROLE_DELETE_NOT_ALLOWED,
+      statusCode: HTTP_STATUS.FORBIDDEN,
+      errorCode: "SYSTEM_ROLE_DELETE_NOT_ALLOWED",
+    });
+  }
+
+  // Get permission IDs from the role before deleting
+  const deletedPermissionIds = role.permissionIds || [];
+
+  // Rule 3: Move users to Default Viewer role before delete
+  const updateResult = await User.updateMany(
+    { roleId: id },
+    { 
+      $set: { 
+        roleId: DEFAULT_VIEWER_ROLE_ID,
+        role: USER_ROLE.USER,
+      } 
+    }
+  );
+
+  // Rule 5: Delete the role
+  const deleteResult = await Role.deleteOne({ roleId: id });
+  
+  if (deleteResult.deletedCount === 0) {
+    throw new AppError({
+      message: ROLE_MESSAGES.NOT_FOUND,
+      statusCode: HTTP_STATUS.NOT_FOUND,
+      errorCode: "ROLE_NOT_FOUND",
+    });
+  }
+
+  // Update assignedRolesCount for permissions that were assigned to the deleted role
+  if (deletedPermissionIds.length > 0) {
+    await updatePermissionAssignedRolesCount(deletedPermissionIds);
+  }
+
+  return { reassignedCount: updateResult.modifiedCount };
 };

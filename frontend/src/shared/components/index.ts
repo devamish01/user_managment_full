@@ -12,5 +12,6 @@ export { SharedLoader } from "./SharedLoader";
 export { SharedPagination } from "./SharedPagination";
 export { SharedSearch } from "./SharedSearch";
 export { SharedTable } from "./SharedTable";
+export { SharedSelect } from "./SharedSelect";
 export * from "./states";
 export * from "./filters";
