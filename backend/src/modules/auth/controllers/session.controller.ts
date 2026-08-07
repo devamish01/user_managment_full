@@ -10,6 +10,8 @@ export interface AuthRequest extends Request {
   user?: {
     userId: string;
     role: string;
+    roleId: string;
+    isSuperAdmin: boolean;
     sessionId: string;
   };
 }

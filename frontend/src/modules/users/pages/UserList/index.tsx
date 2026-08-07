@@ -157,15 +157,15 @@ export const UserList: React.FC<UserListProps> = () => {
   // ── Standard page lifecycle (declared AFTER all hooks) ──
   if (loading) return <UsersSkeleton />;
   
-  // if (error) {
-  //   return (
-  //     <ErrorState
-  //       title="Unable to load users"
-  //       description={error}
-  //       onRetry={handleRetry}
-  //     />
-  //   );
-  // }
+  if (error) {
+    return (
+      <ErrorState
+        title="Unable to load users"
+        description={error}
+        onRetry={handleRetry}
+      />
+    );
+  }
 
   const baseMeta: PaginationMeta = (pagination as PaginationMeta) || { page: 1, limit: 10, total: users.length, totalPages: 1, hasNext: false, hasPrevious: false };
   // When a client-side date range is applied, pagination meta no longer matches visible rows.

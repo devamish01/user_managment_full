@@ -3,6 +3,12 @@ import { IPermission, IPermissionDocument } from "../types/permission.type.js";
 
 const permissionSchema = new Schema<IPermissionDocument>(
   {
+    permissionId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
     id: {
       type: String,
       required: true,

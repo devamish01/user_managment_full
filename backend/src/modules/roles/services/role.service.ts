@@ -6,6 +6,7 @@ import { USER_ROLE } from "@/modules/users/constants/user.constants.js";
 import { HTTP_STATUS } from "@/shared/constants/http-status.js";
 import { AppError } from "@/shared/errors/index.js";
 import type { IRole, CreateRoleInput, UpdateRoleInput, RoleQueryInput, PaginatedRolesResponse } from "../types/role.type.js";
+import { createHash } from "crypto";
 
 interface PaginatedResult<T> {
   data: T[];
@@ -17,8 +18,18 @@ interface PaginatedResult<T> {
   };
 }
 
+/**
+ * Generate a stable role ID from the role name.
+ * Uses first 6 characters of SHA256 hash for consistency.
+ * Format: ROL_xxxxxx
+ */
+const generateRoleId = (name: string): string => {
+  const hash = createHash("sha256").update(name).digest("hex");
+  return `ROL_${hash.substring(0, 6).toUpperCase()}`;
+};
+
 // Helper function to update assignedRolesCount for permissions
-const updatePermissionAssignedRolesCount = async (permissionIds: string[]): Promise<void> => {
+export const updatePermissionAssignedRolesCount = async (permissionIds: string[]): Promise<void> => {
   if (!permissionIds.length) return;
   
   const rolesWithPermissions = await Role.find({ permissionIds: { $in: permissionIds } }).select("permissionIds").lean();
@@ -30,10 +41,10 @@ const updatePermissionAssignedRolesCount = async (permissionIds: string[]): Prom
     }
   }
 
-  // Update each permission's assignedRolesCount
+  // Update each permission's assignedRolesCount using permissionId
   const updates = permissionIds.map(permId => 
     Permission.updateOne(
-      { id: permId },
+      { permissionId: permId },
       { $set: { assignedRolesCount: roleCountMap.get(permId) || 0 } }
     )
   );
@@ -96,26 +107,72 @@ export const createRole = async (data: CreateRoleInput, createdBy: string): Prom
   }
 
   // Generate roleId
-  const roleCount = await Role.countDocuments();
-  const roleId = `r${roleCount + 1}`;
+  let roleId: string;
+  let isSuperAdmin = data.isSuperAdmin || false;
+  
+  if (isSuperAdmin) {
+    // Super Admin gets fixed roleId
+    roleId = SUPER_ADMIN_ROLE_ID; // ROL_SUPER_ADMIN
+    
+    // Check if Super Admin already exists
+    const existingSuperAdmin = await Role.findOne({ roleId: SUPER_ADMIN_ROLE_ID });
+    if (existingSuperAdmin) {
+      throw new AppError({
+        message: "Super Admin role already exists. Only one Super Admin role is allowed.",
+        statusCode: HTTP_STATUS.CONFLICT,
+        errorCode: "SUPER_ADMIN_EXISTS",
+      });
+    }
+  } else {
+    roleId = generateRoleId(data.name);
+    
+    // Check for duplicate roleId (extremely unlikely but possible)
+    const existingId = await Role.findOne({ roleId });
+    if (existingId) {
+      throw new AppError({
+        message: "Role ID collision. Please try a different name.",
+        statusCode: HTTP_STATUS.CONFLICT,
+        errorCode: "ROLE_ID_EXISTS",
+      });
+    }
+  }
+
+  // If Super Admin, automatically assign ALL permissions
+  let permissionIds = data.permissionIds || [];
+  if (isSuperAdmin) {
+    const allPermissions = await Permission.find({}, { permissionId: 1 }).lean();
+    permissionIds = allPermissions.map(p => p.permissionId);
+  }
 
   const role = await Role.create({
     ...data,
     roleId,
+    isSuperAdmin,
+    permissionIds,
     createdBy,
   });
 
   // Update assignedRolesCount for permissions assigned to this role
-  if (data.permissionIds && data.permissionIds.length > 0) {
-    await updatePermissionAssignedRolesCount(data.permissionIds);
+  if (permissionIds.length > 0) {
+    await updatePermissionAssignedRolesCount(permissionIds);
   }
 
   return role.toObject() as unknown as IRole;
 };
 
 export const updateRole = async (id: string, data: UpdateRoleInput): Promise<IRole> => {
-  // Prevent modification of Super Admin role only
-  if (id === SUPER_ADMIN_ROLE_ID) {
+  // Find role by roleId or permissionId (for backward compat)
+  const currentRole = await Role.findOne({ $or: [{ roleId: id }, { roleId: id }] }).lean();
+  if (!currentRole) {
+    throw new AppError({
+      message: ROLE_MESSAGES.NOT_FOUND,
+      statusCode: HTTP_STATUS.NOT_FOUND,
+      errorCode: "ROLE_NOT_FOUND",
+    });
+  }
+
+  // Prevent modification of Super Admin role
+  if (currentRole.isSuperAdmin) {
     throw new AppError({
       message: ROLE_MESSAGES.CANNOT_MODIFY_SUPER_ADMIN,
       statusCode: HTTP_STATUS.FORBIDDEN,
@@ -125,7 +182,7 @@ export const updateRole = async (id: string, data: UpdateRoleInput): Promise<IRo
 
   // Check if name already exists (if name is being updated)
   if (data.name) {
-    const existingRole = await Role.findOne({ name: data.name, roleId: { $ne: id } });
+    const existingRole = await Role.findOne({ name: data.name, roleId: { $ne: currentRole.roleId } });
     if (existingRole) {
       throw new AppError({
         message: ROLE_MESSAGES.NAME_EXISTS,
@@ -135,23 +192,28 @@ export const updateRole = async (id: string, data: UpdateRoleInput): Promise<IRo
     }
   }
 
-  // Get the current role to compare permissionIds
-  const currentRole = await Role.findOne({ roleId: id }).lean();
-  if (!currentRole) {
+  // Prevent changing isSuperAdmin flag
+  if (data.isSuperAdmin !== undefined && data.isSuperAdmin !== currentRole.isSuperAdmin) {
     throw new AppError({
-      message: ROLE_MESSAGES.NOT_FOUND,
-      statusCode: HTTP_STATUS.NOT_FOUND,
-      errorCode: "ROLE_NOT_FOUND",
+      message: "Cannot change Super Admin status of an existing role.",
+      statusCode: HTTP_STATUS.FORBIDDEN,
+      errorCode: "CANNOT_CHANGE_SUPER_ADMIN",
     });
   }
 
   const oldPermissionIds = currentRole.permissionIds || [];
-  const newPermissionIds = data.permissionIds || [];
+  let newPermissionIds = data.permissionIds || oldPermissionIds;
+
+  // If this role is Super Admin (shouldn't happen due to check above), ensure all permissions
+  if (currentRole.isSuperAdmin) {
+    const allPermissions = await Permission.find({}, { permissionId: 1 }).lean();
+    newPermissionIds = allPermissions.map(p => p.permissionId);
+  }
 
   const role = await Role.findOneAndUpdate(
-    { roleId: id },
-    { $set: data },
-    { new: true, runValidators: true },
+    { roleId: currentRole.roleId },
+    { $set: { ...data, permissionIds: newPermissionIds } },
+    { returnDocument: "after", runValidators: true },
   ).lean();
 
   if (!role) {
@@ -173,7 +235,7 @@ export const updateRole = async (id: string, data: UpdateRoleInput): Promise<IRo
 
 export const deleteRole = async (id: string): Promise<{ reassignedCount: number }> => {
   // Find the role first
-  const role = await Role.findOne({ roleId: id }).lean();
+  const role = await Role.findOne({ $or: [{ roleId: id }, { roleId: id }] }).lean();
   
   if (!role) {
     throw new AppError({
@@ -192,12 +254,21 @@ export const deleteRole = async (id: string): Promise<{ reassignedCount: number 
     });
   }
 
+  // Rule 2: Protect Super Admin role
+  if (role.isSuperAdmin) {
+    throw new AppError({
+      message: ROLE_MESSAGES.CANNOT_MODIFY_SUPER_ADMIN,
+      statusCode: HTTP_STATUS.FORBIDDEN,
+      errorCode: "CANNOT_MODIFY_SUPER_ADMIN",
+    });
+  }
+
   // Get permission IDs from the role before deleting
   const deletedPermissionIds = role.permissionIds || [];
 
   // Rule 3: Move users to Default Viewer role before delete
   const updateResult = await User.updateMany(
-    { roleId: id },
+    { roleId: role.roleId },
     { 
       $set: { 
         roleId: DEFAULT_VIEWER_ROLE_ID,
@@ -207,7 +278,7 @@ export const deleteRole = async (id: string): Promise<{ reassignedCount: number 
   );
 
   // Rule 5: Delete the role
-  const deleteResult = await Role.deleteOne({ roleId: id });
+  const deleteResult = await Role.deleteOne({ roleId: role.roleId });
   
   if (deleteResult.deletedCount === 0) {
     throw new AppError({

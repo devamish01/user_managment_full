@@ -59,6 +59,8 @@ const session = await findActiveSession(
   const accessToken = generateAccessToken({
     userId: user.userId,
     role: user.role,
+    roleId: user.roleId,
+    isSuperAdmin: user.roleId === "ROL_SUPER_ADMIN",
     sessionId: session.sessionId,
   });
 

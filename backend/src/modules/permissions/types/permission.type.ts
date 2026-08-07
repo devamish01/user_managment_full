@@ -1,6 +1,7 @@
 import { Document } from "mongoose";
 
 export interface IPermission {
+  permissionId: string;
   id: string;
   name: string;
   key: string;
@@ -15,6 +16,7 @@ export interface IPermissionDocument extends IPermission, Document {
 }
 
 export interface CreatePermissionInput {
+  permissionId?: string; // Auto-generated if not provided
   name: string;
   key: string;
   module: string;

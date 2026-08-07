@@ -38,6 +38,8 @@ export const getNavigation = async (): Promise<NavigationItem[]> => {
         children: [
           { id: "nav-logs", title: "Activity Logs", icon: "activity", route: "logs", permission: "pages.logs", order: 1, visible: true, children: [] },
           { id: "nav-settings", title: "Settings", icon: "settings", route: "settings", permission: "pages.settings", order: 2, visible: true, children: [] },
+          { id: "nav-overview", title: "Overview", icon: "Overview", route: "overview", permission: "pages.overview", order: 3, visible: true, children: [] },
+
         ],
       },
     ];

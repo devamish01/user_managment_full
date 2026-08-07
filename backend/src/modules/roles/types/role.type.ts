@@ -5,6 +5,7 @@ export interface IRole {
   permissionIds: string[];
   color: string;
   isSystem: boolean;
+  isSuperAdmin: boolean;
   createdBy: string; // User ID who created this role
   createdAt: Date;
   updatedAt: Date;
@@ -16,6 +17,7 @@ export interface CreateRoleInput {
   permissionIds: string[];
   color: string;
   isSystem?: boolean;
+  isSuperAdmin?: boolean;
   createdBy?: string; // Will be set from authenticated user
 }
 
@@ -25,6 +27,7 @@ export interface UpdateRoleInput {
   permissionIds?: string[];
   color?: string;
   isSystem?: boolean;
+  isSuperAdmin?: boolean;
 }
 
 export interface RoleQueryInput {

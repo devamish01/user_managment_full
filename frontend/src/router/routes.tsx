@@ -40,6 +40,7 @@ import { rolesRoutes } from "@/modules/roles/routes";
 import { permissionsRoutes } from "@/modules/permissions/routes";
 import { logsRoutes } from "@/modules/logs.routes";
 import { settingsRoutes } from "@/modules/settings.routes";
+import { overviewRoutes } from "@/modules/overview.routes";
 
 /**
  * AppRoot — providers only, no routing decisions.
@@ -68,6 +69,7 @@ const protectedFeatureRoutes: RouteObject[] = [
   ...permissionsRoutes,
   ...logsRoutes,
   ...settingsRoutes,
+  ...overviewRoutes,
 ];
 
 export const router = createBrowserRouter([

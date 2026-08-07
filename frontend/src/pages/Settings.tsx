@@ -6,14 +6,11 @@ import {
   Monitor,
   Bell,
   Lock,
-  Globe,
   User,
   Shield,
   Key,
-  AlertTriangle,
-  Building,
+
   Palette,
-  Plug,
   Eye,
   EyeOff,
   Check,
@@ -33,7 +30,7 @@ import {
   Tabs,
   Textarea,
 } from "@/components/ui";
-import { useTheme, useStore, useHasPermission, isSuperAdmin } from "@/store";
+import { useTheme, useStore, isSuperAdmin } from "@/store";
 import { useToast } from "@/components/ui/toast";
 import { useUsersStore } from "@/modules/users";
 
@@ -51,7 +48,6 @@ export const Settings = () => {
   } = useStore();
   const { users } = useUsersStore();
 
-  const hasPermission = useHasPermission();
 
   const superAdmin = isSuperAdmin(currentRoleId);
   const isAdmin = currentRoleId === "r2";
@@ -62,9 +58,6 @@ export const Settings = () => {
     { value: "appearance", label: "Appearance", icon: <Palette size={14} />, show: true },
     { value: "notifications", label: "Notifications", icon: <Bell size={14} />, show: true },
     { value: "security", label: "Security", icon: <Lock size={14} />, show: true },
-    { value: "workspace", label: "Workspace", icon: <Building size={14} />, show: hasPermission("settings.workspace") },
-    { value: "integrations", label: "Integrations", icon: <Plug size={14} />, show: hasPermission("settings.integrations") },
-    { value: "danger", label: "Danger Zone", icon: <AlertTriangle size={14} />, show: hasPermission("settings.danger") },
   ];
   const tabs = allTabs.filter((t) => t.show);
   const [tab, setTab] = React.useState<string>(tabs[0]?.value || "account");
@@ -86,15 +79,7 @@ export const Settings = () => {
     auditRetention: true,
   });
 
-  const [workspace, setWorkspace] = React.useState({
-    name: "Nexus HQ",
-    url: "nexus.company.io",
-    language: "en",
-    timezone: "pst",
-    dateFormat: "mdy",
-    weekStart: "sun",
-    branding: "auto",
-  });
+
 
   const [pwForm, setPwForm] = React.useState({
     current: "",
@@ -103,8 +88,7 @@ export const Settings = () => {
     show: false,
   });
 
-  const [resetTargetId, setResetTargetId] = React.useState<string>("");
-  const [resetPw, setResetPw] = React.useState("");
+
 
   const save = (msg = "Settings saved") => toast({ type: "success", title: msg });
 
@@ -139,21 +123,7 @@ export const Settings = () => {
     setPwForm({ current: "", next: "", confirm: "", show: false });
   };
 
-  const resetUserPassword = () => {
-    if (!resetTargetId) {
-      toast({ type: "error", title: "Select a user first" });
-      return;
-    }
-    if (resetPw.length < 8) {
-      toast({ type: "error", title: "Password too short", description: "At least 8 characters." });
-      return;
-    }
-    const target = users.find((u) => u.id === resetTargetId);
-    addLog({ userId: users[0]?.id || "u", action: "Reset password", target: target?.name || "user", type: "update" });
-    toast({ type: "success", title: "Password reset", description: `New password set for ${target?.name}.` });
-    setResetPw("");
-    setResetTargetId("");
-  };
+
 
   return (
     <div className="space-y-6">
@@ -408,282 +378,15 @@ export const Settings = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Two-Factor & Sessions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { key: "twoFactor", label: "Two-factor authentication", desc: "Add an extra layer of security." },
-                { key: "sessions", label: "New sign-in alerts", desc: "Get notified about new devices signing in." },
-                { key: "sso", label: "Single Sign-On (SSO)", desc: "Allow SAML/OIDC based login." },
-                { key: "ipAllowlist", label: "IP allowlist", desc: "Restrict access to specific IPs." },
-              ].map((row) => (
-                <div key={row.key} className="flex items-center justify-between rounded-lg border border-border p-3">
-                  <div className="pr-4">
-                    <p className="text-sm font-medium">{row.label}</p>
-                    <p className="text-xs text-muted-foreground">{row.desc}</p>
-                  </div>
-                  <Switch
-                    checked={prefs[row.key as keyof typeof prefs] as boolean}
-                    onCheckedChange={(v) => setPrefs({ ...prefs, [row.key]: v })}
-                  />
-                </div>
-              ))}
-              <Button variant="outline" className="w-full" onClick={() => save("Sessions signed out")}>
-                Sign out of all other sessions
-              </Button>
-            </CardContent>
-          </Card>
+   
         </div>
       )}
 
-      {/* ===================== WORKSPACE ===================== */}
-      {tab === "workspace" && (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>General</CardTitle>
-              <p className="text-sm text-muted-foreground">Configure basic workspace information.</p>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Workspace name</Label>
-                <Input value={workspace.name} onChange={(e) => setWorkspace({ ...workspace, name: e.target.value })} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Workspace URL</Label>
-                <div className="relative">
-                  <Input value={workspace.url} onChange={(e) => setWorkspace({ ...workspace, url: e.target.value })} className="pr-16" />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">.io</span>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Default language</Label>
-                <Select
-                  value={workspace.language}
-                  onChange={(v) => setWorkspace({ ...workspace, language: v })}
-                  options={[
-                    { label: "English", value: "en" },
-                    { label: "Español", value: "es" },
-                    { label: "Français", value: "fr" },
-                    { label: "Deutsch", value: "de" },
-                    { label: "日本語", value: "ja" },
-                  ]}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Timezone</Label>
-                <Select
-                  value={workspace.timezone}
-                  onChange={(v) => setWorkspace({ ...workspace, timezone: v })}
-                  options={[
-                    { label: "Pacific (PST)", value: "pst" },
-                    { label: "Eastern (EST)", value: "est" },
-                    { label: "GMT", value: "gmt" },
-                    { label: "CET", value: "cet" },
-                    { label: "IST", value: "ist" },
-                  ]}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Date format</Label>
-                <Select
-                  value={workspace.dateFormat}
-                  onChange={(v) => setWorkspace({ ...workspace, dateFormat: v })}
-                  options={[
-                    { label: "MM/DD/YYYY", value: "mdy" },
-                    { label: "DD/MM/YYYY", value: "dmy" },
-                    { label: "YYYY-MM-DD", value: "ymd" },
-                  ]}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Week starts on</Label>
-                <Select
-                  value={workspace.weekStart}
-                  onChange={(v) => setWorkspace({ ...workspace, weekStart: v })}
-                  options={[
-                    { label: "Sunday", value: "sun" },
-                    { label: "Monday", value: "mon" },
-                    { label: "Saturday", value: "sat" },
-                  ]}
-                />
-              </div>
-              <div className="md:col-span-2 flex justify-end">
-                <Button onClick={() => save("Workspace saved")}><Save size={14} /> Save workspace</Button>
-              </div>
-            </CardContent>
-          </Card>
+  
+ 
+  
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Branding</CardTitle>
-              <p className="text-sm text-muted-foreground">Personalize how your workspace looks for members.</p>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {[
-                { value: "auto", label: "System default", desc: "Match user preference" },
-                { value: "light", label: "Force light", desc: "Always light for members" },
-                { value: "dark", label: "Force dark", desc: "Always dark for members" },
-              ].map((b) => (
-                <button
-                  key={b.value}
-                  onClick={() => setWorkspace({ ...workspace, branding: b.value })}
-                  className={`rounded-xl border p-4 text-left transition-all ${
-                    workspace.branding === b.value ? "border-primary bg-primary/5" : "border-border hover:bg-accent"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold">{b.label}</p>
-                    {workspace.branding === b.value && <Check size={14} className="text-primary" />}
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{b.desc}</p>
-                </button>
-              ))}
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Audit & Retention</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between rounded-lg border border-border p-3">
-                <div>
-                  <p className="text-sm font-medium">Retain audit logs</p>
-                  <p className="text-xs text-muted-foreground">Keep activity logs for 90 days</p>
-                </div>
-                <Switch
-                  checked={prefs.auditRetention}
-                  onCheckedChange={(v) => setPrefs({ ...prefs, auditRetention: v })}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Super admin password reset for members */}
-          {superAdmin && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Key size={16} /> Reset user password
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Only the Super Admin can reset a member's password. Members cannot change it themselves.
-                </p>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label>User</Label>
-                  <Select
-                    value={resetTargetId}
-                    onChange={setResetTargetId}
-                    placeholder="Select a user"
-                    options={users.slice(0, 30).map((u) => ({ label: `${u.name} — ${u.email}`, value: u.id }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>New password</Label>
-                  <Input
-                    type="password"
-                    placeholder="At least 8 chars"
-                    value={resetPw}
-                    onChange={(e) => setResetPw(e.target.value)}
-                  />
-                </div>
-                <div className="md:col-span-3 flex justify-end">
-                  <Button onClick={resetUserPassword}>Reset password</Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* ===================== INTEGRATIONS ===================== */}
-      {tab === "integrations" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Integrations</CardTitle>
-            <p className="text-sm text-muted-foreground">Connect Nexus with the tools your team already uses.</p>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {[
-              { name: "Slack", desc: "Get notifications in your channels", connected: true, color: "from-purple-500 to-fuchsia-500" },
-              { name: "Google Workspace", desc: "Sync users and calendars", connected: true, color: "from-blue-500 to-cyan-500" },
-              { name: "GitHub", desc: "Link repositories and PRs", connected: false, color: "from-slate-500 to-zinc-700" },
-              { name: "Jira", desc: "Track issues and sprints", connected: false, color: "from-blue-600 to-indigo-600" },
-              { name: "Zoom", desc: "Schedule and join meetings", connected: true, color: "from-sky-500 to-blue-500" },
-              { name: "Stripe", desc: "Manage subscriptions", connected: false, color: "from-indigo-500 to-purple-500" },
-            ].map((i) => (
-              <div key={i.name} className="rounded-lg border border-border p-4 transition-all hover:shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br ${i.color} text-white`}>
-                    <Plug size={14} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold">{i.name}</p>
-                      {i.connected && <Badge variant="success">Connected</Badge>}
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{i.desc}</p>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" className="mt-3 w-full">
-                  {i.connected ? "Configure" : "Connect"}
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ===================== DANGER ZONE (Super Admin only) ===================== */}
-      {tab === "danger" && superAdmin && (
-        <Card className="border-red-500/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-500">
-              <AlertTriangle size={18} /> Danger Zone
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">Irreversible actions — proceed with caution.</p>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {[
-              { label: "Transfer ownership", desc: "Transfer this workspace to another Super Admin.", cta: "Transfer" },
-              { label: "Reset all sessions", desc: "Force sign-out for every member in the workspace.", cta: "Reset" },
-              { label: "Delete workspace", desc: "Permanently delete this workspace and all its data.", cta: "Delete", destructive: true },
-            ].map((row) => (
-              <div key={row.label} className="flex flex-col justify-between gap-3 rounded-lg border border-border p-4 md:flex-row md:items-center">
-                <div>
-                  <p className="text-sm font-semibold">{row.label}</p>
-                  <p className="text-xs text-muted-foreground">{row.desc}</p>
-                </div>
-                <Button
-                  variant={row.destructive ? "destructive" : "outline"}
-                  size="sm"
-                  onClick={() => toast({ type: "warning", title: `${row.cta} triggered (demo)` })}
-                >
-                  {row.cta}
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Restricted note for lower roles hitting workspace/integrations/danger */}
-      {(currentRoleId === "r3" || currentRoleId === "r4") && (
-        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 p-3 text-xs">
-          <Globe size={14} className="mt-0.5 text-muted-foreground" />
-          <div>
-            <p className="font-medium">Some tabs are hidden</p>
-            <p className="mt-0.5 text-muted-foreground">
-              Workspace, Integrations, and Danger Zone are only visible to Admins and Super Admins.
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

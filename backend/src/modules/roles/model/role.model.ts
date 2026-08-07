@@ -36,6 +36,11 @@ const roleSchema = new Schema<IRoleDocument>(
       type: Boolean,
       default: false,
     },
+    isSuperAdmin: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     createdBy: {
       type: String,
       required: true,

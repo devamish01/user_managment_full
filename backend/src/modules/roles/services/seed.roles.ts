@@ -1,141 +1,154 @@
 import { Role } from "../model/index.js";
-import { SUPER_ADMIN_ROLE_ID, DEFAULT_VIEWER_ROLE_ID } from "../constants/role.constants.js";
+import { Permission } from "@/modules/permissions/model/index.js";
+import { SUPER_ADMIN_ROLE_ID } from "../constants/role.constants.js";
+import { createHash } from "crypto";
+
+/**
+ * Generate a stable role ID from the role name.
+ * Uses first 6 characters of SHA256 hash for consistency.
+ * Format: ROL_xxxxxx
+ */
+const generateRoleId = (name: string): string => {
+  const hash = createHash("sha256").update(name).digest("hex");
+  return `ROL_${hash.substring(0, 6).toUpperCase()}`;
+};
 
 const defaultRoles = [
   {
-    roleId: "r1",
+    roleId: SUPER_ADMIN_ROLE_ID, // ROL_SUPER_ADMIN (fixed)
     name: "Super Admin",
     description: "Full unrestricted access — permissions cannot be modified for this role",
     color: "from-violet-500 to-indigo-600",
     permissionIds: [] as string[], // Will be populated with all permissions
     isSystem: true,
+    isSuperAdmin: true,
     createdBy: "SYSTEM",
   },
   {
-    roleId: "r2",
+    roleId: generateRoleId("Admin"),
     name: "Admin",
     description: "Manages users, roles and integrations",
     color: "from-blue-500 to-cyan-500",
-    permissionIds: [] as string[], // Will be populated with admin permissions
+    permissionIds: [] as string[],
     isSystem: false,
+    isSuperAdmin: false,
     createdBy: "SYSTEM",
   },
   {
-    roleId: "r3",
+    roleId: generateRoleId("Manager"),
     name: "Manager",
     description: "Team lead — can view and manage users but no access to roles or system tools",
     color: "from-emerald-500 to-teal-500",
-    permissionIds: [] as string[], // Will be populated with manager permissions
+    permissionIds: [] as string[],
     isSystem: false,
+    isSuperAdmin: false,
     createdBy: "SYSTEM",
   },
   {
-    roleId: "r4",
+    roleId: generateRoleId("Default Viewer"),
     name: "Default Viewer",
     description: "Read-only access to Dashboard and Users List — fallback role when other roles are deleted",
     color: "from-slate-500 to-slate-600",
-    permissionIds: [] as string[], // Will be populated with minimal permissions
+    permissionIds: [] as string[],
     isSystem: true,
+    isSuperAdmin: false,
     createdBy: "SYSTEM",
   },
 ];
 
 export const seedRoles = async (): Promise<void> => {
-  // Check if Super Admin role already exists
-  const existingSuperAdmin = await Role.findOne({ roleId: SUPER_ADMIN_ROLE_ID });
-  if (existingSuperAdmin) {
-    console.log("Roles already seeded, skipping...");
-    return;
+  console.log("Seeding default roles (idempotent)...");
+
+  // Get all permission IDs (using permissionId field)
+  const allPermissions = await Permission.find({}, { permissionId: 1, key: 1 }).lean();
+  const allPermissionIds = allPermissions.map((p) => p.permissionId);
+
+  // Create a map of permission key to permissionId for easy lookup
+  const permissionKeyToId = new Map<string, string>();
+  for (const p of allPermissions) {
+    permissionKeyToId.set(p.key, p.permissionId);
   }
 
-  console.log("Seeding default roles...");
+  let seededCount = 0;
 
-  // Get all permission IDs to assign to Super Admin
-  const Permission = (await import("@/modules/permissions/model/index.js")).Permission;
-  const allPermissions = await Permission.find({}, "id").lean();
-  const allPermissionIds = allPermissions.map((p) => p.id);
-
-  // Assign all permissions to Super Admin
-  const superAdminRole = defaultRoles.find(r => r.roleId === SUPER_ADMIN_ROLE_ID);
-  if (superAdminRole) {
-    superAdminRole.permissionIds = allPermissionIds;
-  }
-
-  // Assign admin permissions to Admin role
-  const adminRole = defaultRoles.find(r => r.roleId === "r2");
-  if (adminRole) {
-    // Admin gets most permissions except system-level ones
-    const adminPermissionIds = allPermissions
-      .filter(p => 
+  for (const roleData of defaultRoles) {
+    // If Super Admin, assign ALL permissions
+    let permissionIds = roleData.permissionIds;
+    if (roleData.isSuperAdmin) {
+      permissionIds = allPermissionIds;
+    } else if (roleData.name === "Admin") {
+      // Admin gets most permissions except system-level ones
+      const adminPermissionKeys = [
         // Sidebar Navigation
-        p.id.startsWith("p1") || p.id.startsWith("p2") || p.id.startsWith("p4") || 
-        p.id.startsWith("p5") || p.id.startsWith("p6") || p.id.startsWith("p7") ||
+        "pages.dashboard", "pages.users", "pages.permissions", "pages.assignment", "pages.logs", "pages.settings",
         // User Management
-        p.id.startsWith("p8") || p.id.startsWith("p9") || p.id.startsWith("p10") || 
-        p.id.startsWith("p11") || p.id.startsWith("p30") ||
+        "users.create", "users.update", "users.delete", "users.export", "users.view_full_email",
         // User Management UI
-        p.id.startsWith("p19") || p.id.startsWith("p20") || p.id.startsWith("p21") || 
-        p.id.startsWith("p22") || p.id.startsWith("p23") || p.id.startsWith("p24") ||
-        p.id.startsWith("p25") || p.id.startsWith("p26") || p.id.startsWith("p27") || 
-        p.id.startsWith("p28") || p.id.startsWith("p29") || p.id.startsWith("p30") ||
+        "users.col_name", "users.col_email", "users.col_role", "users.col_status", "users.col_mobile", "users.col_id",
+        "users.tab_active", "users.tab_inactive", "users.tab_blocked", "users.tab_pending",
+        "users.sec_details", "users.sec_security",
         // Role Assignment
-        p.id.startsWith("p12") || p.id.startsWith("p31") || p.id.startsWith("p32") || 
-        p.id.startsWith("p14") ||
+        "roles.create", "roles.edit", "roles.delete", "roles.assign",
         // Role Assignment UI
-        p.id.startsWith("p33") || p.id.startsWith("p34") ||
+        "roles.ui_card", "roles.ui_list",
         // Permissions
-        p.id.startsWith("p13") ||
+        "permissions.manage",
         // Permissions UI
-        p.id.startsWith("p36") || p.id.startsWith("p37") ||
+        "permissions.ui_search", "permissions.ui_filter",
         // Activity Logs
-        p.id.startsWith("p42") ||
+        "logs.export",
         // Activity Logs UI
-        p.id.startsWith("p43") || p.id.startsWith("p44") ||
+        "logs.ui_search", "logs.ui_filter",
         // Settings
-        p.id.startsWith("p16") || p.id.startsWith("p17") || p.id.startsWith("p18") ||
+        "settings.password", "settings.integrations", "settings.danger",
         // Settings UI
-        p.id.startsWith("p15") || p.id.startsWith("p38") || p.id.startsWith("p39") || 
-        p.id.startsWith("p40") || p.id.startsWith("p41")
-      )
-      .map(p => p.id);
-    adminRole.permissionIds = adminPermissionIds;
-  }
-
-  // Assign manager permissions to Manager role
-  const managerRole = defaultRoles.find(r => r.roleId === "r3");
-  if (managerRole) {
-    // Manager gets user management and viewing permissions
-    const managerPermissionIds = allPermissions
-      .filter(p => 
+        "settings.ui_workspace", "settings.ui_security", "settings.ui_notifications", "settings.ui_integrations", "settings.ui_danger",
+      ];
+      permissionIds = adminPermissionKeys.map(key => permissionKeyToId.get(key)).filter(Boolean) as string[];
+    } else if (roleData.name === "Manager") {
+      // Manager gets user management and viewing permissions
+      const managerPermissionKeys = [
         // Sidebar Navigation
-        p.id.startsWith("p1") || p.id.startsWith("p2") || p.id.startsWith("p7") ||
+        "pages.dashboard", "pages.users", "pages.settings",
         // User Management
-        p.id.startsWith("p8") || p.id.startsWith("p9") || p.id.startsWith("p11") || 
-        p.id.startsWith("p30") ||
+        "users.create", "users.update", "users.export", "users.view_full_email",
         // User Management UI
-        p.id.startsWith("p19") || p.id.startsWith("p20") || p.id.startsWith("p21") || 
-        p.id.startsWith("p22") || p.id.startsWith("p23") || p.id.startsWith("p24") ||
-        p.id.startsWith("p25") || p.id.startsWith("p26") || p.id.startsWith("p27") || 
-        p.id.startsWith("p28") || p.id.startsWith("p29") || p.id.startsWith("p30") ||
+        "users.col_name", "users.col_email", "users.col_role", "users.col_status", "users.col_mobile", "users.col_id",
+        "users.tab_active", "users.tab_inactive", "users.tab_blocked", "users.tab_pending",
+        "users.sec_details", "users.sec_security",
         // Settings UI (view only)
-        p.id.startsWith("p38") || p.id.startsWith("p39")
-      )
-      .map(p => p.id);
-    managerRole.permissionIds = managerPermissionIds;
-  }
+        "settings.ui_security", "settings.ui_notifications",
+      ];
+      permissionIds = managerPermissionKeys.map(key => permissionKeyToId.get(key)).filter(Boolean) as string[];
+    } else if (roleData.name === "Default Viewer") {
+      // Default Viewer gets minimal permissions
+      const viewerPermissionKeys = [
+        "pages.dashboard", "pages.users", "pages.settings",
+      ];
+      permissionIds = viewerPermissionKeys.map(key => permissionKeyToId.get(key)).filter(Boolean) as string[];
+    }
 
-  // Assign minimal permissions to Default Viewer (Dashboard view, Users list view)
-  const defaultViewerRole = defaultRoles.find(r => r.roleId === DEFAULT_VIEWER_ROLE_ID);
-  if (defaultViewerRole) {
-    // Find permissions for basic viewing
-    const viewerPermissions = allPermissions.filter(p => 
-      p.id.startsWith("p1") || // View Dashboard
-      p.id.startsWith("p2") || // View Users List
-      p.id.startsWith("p7")    // View Settings
+    const result = await Role.findOneAndUpdate(
+      { roleId: roleData.roleId },
+      {
+        $setOnInsert: {
+          roleId: roleData.roleId,
+          name: roleData.name,
+          description: roleData.description,
+          color: roleData.color,
+          permissionIds,
+          isSystem: roleData.isSystem,
+          isSuperAdmin: roleData.isSuperAdmin,
+          createdBy: roleData.createdBy,
+        }
+      },
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
     );
-    defaultViewerRole.permissionIds = viewerPermissions.map(p => p.id);
+
+    if (result) {
+      seededCount++;
+    }
   }
 
-  await Role.insertMany(defaultRoles);
-  console.log(`Seeded ${defaultRoles.length} default roles`);
+  console.log(`Roles seeded/updated: ${seededCount} total`);
 };

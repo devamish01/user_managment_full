@@ -32,7 +32,7 @@ export const ROLE_ERRORS = {
   SYSTEM_ROLE_DELETE_NOT_ALLOWED: "System roles cannot be deleted.",
 } as const;
 
-export const SUPER_ADMIN_ROLE_ID = "r1";
-export const DEFAULT_VIEWER_ROLE_ID = "r4";
+export const SUPER_ADMIN_ROLE_ID = "ROL_SUPER_ADMIN";
+export const DEFAULT_VIEWER_ROLE_ID = "ROL_DEFAULT_VIEWER"; // Will be set after migration
 export const SUPER_ADMIN_ROLE_NAME = "Super Admin";
-export const SYSTEM_ROLE_IDS = ["r1", "r4"] as const;
+export const SYSTEM_ROLE_IDS = ["ROL_SUPER_ADMIN", "ROL_DEFAULT_VIEWER"] as const;

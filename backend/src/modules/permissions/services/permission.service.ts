@@ -6,8 +6,11 @@ import { HTTP_STATUS } from "@/shared/constants/http-status.js";
 import type { IPermissionDocument, PermissionQueryParams, PermissionListResponse, CreatePermissionInput, UpdatePermissionInput } from "../types/permission.type.js";
 import { SortOrder } from "mongoose";
 import { logger } from "@/shared/logger/index.js";
+import { createHash } from "crypto";
+import { updatePermissionAssignedRolesCount } from "@/modules/roles/services/role.service.js";
 
 const transformPermission = (permission: IPermissionDocument, assignedRolesCount?: number) => ({
+  permissionId: permission.permissionId,
   id: permission.id,
   name: permission.name,
   key: permission.key,
@@ -19,26 +22,13 @@ const transformPermission = (permission: IPermissionDocument, assignedRolesCount
 });
 
 /**
- * Generate the next permission ID by finding the highest existing numeric ID.
- * This ensures unique IDs even after deletions.
+ * Generate a stable permission ID from the permission key.
+ * Uses first 6 characters of SHA256 hash for consistency.
+ * Format: PRM_xxxxxx
  */
-const generateNextPermissionId = async (): Promise<string> => {
-  const permissions = await Permission.find({}, { id: 1 }).lean();
-
-  let max = 0;
-
-  for (const permission of permissions) {
-    const match = permission.id?.match(/^p(\d+)$/);
-
-    if (match) {
-      const num = Number(match[1]);
-      if (num > max) {
-        max = num;
-      }
-    }
-  }
-
-  return `p${max + 1}`;
+const generatePermissionId = (key: string): string => {
+  const hash = createHash("sha256").update(key).digest("hex");
+  return `PRM_${hash.substring(0, 6).toUpperCase()}`;
 };
 
 export const getPermissions = async (query: PermissionQueryParams): Promise<PermissionListResponse> => {
@@ -77,8 +67,8 @@ export const getPermissions = async (query: PermissionQueryParams): Promise<Perm
   ]);
 
   // Calculate assignedRolesCount for each permission
-  // Roles store permission IDs (like "p1", "p2"), not permission keys
-  const permissionIds = permissions.map(p => p.id);
+  // Roles store permission IDs (like "p1", "p2" or "PRM_xxxxxx"), not permission keys
+  const permissionIds = permissions.map(p => p.permissionId);
   const rolesWithPermissions = await Role.find({ permissionIds: { $in: permissionIds } }).select("permissionIds").lean();
   
   const roleCountMap = new Map<string, number>();
@@ -91,7 +81,7 @@ export const getPermissions = async (query: PermissionQueryParams): Promise<Perm
   const totalPages = Math.ceil(total / limit);
 
   return {
-    data: permissions.map(p => transformPermission(p, roleCountMap.get(p.id) || 0)) as IPermissionDocument[],
+    data: permissions.map(p => transformPermission(p, roleCountMap.get(p.permissionId) || 0)) as IPermissionDocument[],
     pagination: {
       page,
       limit,
@@ -104,7 +94,8 @@ export const getPermissions = async (query: PermissionQueryParams): Promise<Perm
 };
 
 export const getPermissionById = async (id: string): Promise<IPermissionDocument> => {
-  const permission = await Permission.findOne({ id }).lean();
+  // Support lookup by either permissionId or legacy id
+  const permission = await Permission.findOne({ $or: [{ permissionId: id }, { id }] }).lean();
   if (!permission) {
     throw new AppError({
       message: PERMISSION_MESSAGES.NOT_FOUND,
@@ -114,8 +105,8 @@ export const getPermissionById = async (id: string): Promise<IPermissionDocument
   }
 
   // Calculate assignedRolesCount for single permission
-  // Roles store permission IDs (like "p1", "p2"), not permission keys
-  const count = await Role.countDocuments({ permissionIds: permission.id });
+  // Roles store permission IDs (like "p1", "p2" or "PRM_xxxxxx"), not permission keys
+  const count = await Role.countDocuments({ permissionIds: permission.permissionId });
   return transformPermission(permission, count) as IPermissionDocument;
 };
 
@@ -131,16 +122,38 @@ export const createPermission = async (input: CreatePermissionInput): Promise<IP
       });
     }
 
-    // Generate next permission ID (ignoring any client-supplied id)
-    const generatedId = await generateNextPermissionId();
+    // Generate stable permission ID from key
+    const permissionId = input.permissionId || generatePermissionId(input.key);
+
+    // Check for duplicate permissionId
+    const existingId = await Permission.findOne({ permissionId }).lean();
+    if (existingId) {
+      throw new AppError({
+        message: "Permission ID already exists. Please try again.",
+        statusCode: HTTP_STATUS.CONFLICT,
+        errorCode: "PERMISSION_ID_EXISTS",
+      });
+    }
 
     // Explicitly exclude any id from input and use generated ID
-    const { id: _ignoredId, ...rest } = input as CreatePermissionInput & { id?: string };
+    const { id: _ignoredId, permissionId: _ignoredPermissionId, ...rest } = input as CreatePermissionInput & { id?: string; permissionId?: string };
 
     const permission = await Permission.create({
       ...rest,
-      id: generatedId,
+      permissionId,
+      id: permissionId, // Keep id in sync with permissionId for backward compatibility
     });
+
+    // Auto-assign new permission to Super Admin role
+    const superAdminRole = await Role.findOne({ roleId: "ROL_SUPER_ADMIN" });
+    if (superAdminRole) {
+      await Role.updateOne(
+        { roleId: "ROL_SUPER_ADMIN" },
+        { $addToSet: { permissionIds: permissionId } }
+      );
+      // Update assignedRolesCount for the new permission
+      await updatePermissionAssignedRolesCount([permissionId]);
+    }
 
     return transformPermission(permission.toObject()) as IPermissionDocument;
   } catch (error) {
@@ -159,7 +172,7 @@ export const createPermission = async (input: CreatePermissionInput): Promise<IP
           errorCode: "PERMISSION_KEY_EXISTS",
         });
       }
-      if (field === "id") {
+      if (field === "permissionId" || field === "id") {
         throw new AppError({
           message: "Permission ID already exists. Please try again.",
           statusCode: HTTP_STATUS.CONFLICT,
@@ -201,7 +214,8 @@ export const updatePermission = async (id: string, input: UpdatePermissionInput)
 };
 
 export const deletePermission = async (id: string): Promise<void> => {
-  const permission = await Permission.findOne({ id });
+  // Support lookup by either permissionId or legacy id
+  const permission = await Permission.findOne({ $or: [{ permissionId: id }, { id }] });
   if (!permission) {
     throw new AppError({
       message: PERMISSION_MESSAGES.NOT_FOUND,
@@ -211,7 +225,7 @@ export const deletePermission = async (id: string): Promise<void> => {
   }
 
   // Check if permission is assigned to any roles
-  const assignedRolesCount = await Role.countDocuments({ permissionIds: permission.id });
+  const assignedRolesCount = await Role.countDocuments({ permissionIds: permission.permissionId });
   if (assignedRolesCount > 0) {
     throw new AppError({
       message: PERMISSION_MESSAGES.ASSIGNED_TO_ROLES.replace("{count}", assignedRolesCount.toString()),

@@ -26,6 +26,8 @@ export interface AuthRequest extends Request {
   user?: {
     userId: string;
     role: string;
+    roleId: string;
+    isSuperAdmin: boolean;
     sessionId: string;
   };
 }
@@ -104,6 +106,8 @@ export const authMiddleware = async (
   req.user = {
     userId: payload.userId,
     role: payload.role,
+    roleId: payload.roleId,
+    isSuperAdmin: payload.isSuperAdmin,
     sessionId: payload.sessionId,
   };
 
