@@ -399,6 +399,6 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
         </div>
       </div>
     </SharedModal>
-    </>
+        </>
   );
 };

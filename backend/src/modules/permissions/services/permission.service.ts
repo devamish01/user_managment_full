@@ -145,10 +145,10 @@ export const createPermission = async (input: CreatePermissionInput): Promise<IP
     });
 
     // Auto-assign new permission to Super Admin role
-    const superAdminRole = await Role.findOne({ roleId: "ROL_SUPER_ADMIN" });
+    const superAdminRole = await Role.findOne({ roleId: "r1" });
     if (superAdminRole) {
       await Role.updateOne(
-        { roleId: "ROL_SUPER_ADMIN" },
+        { roleId: "r1" },
         { $addToSet: { permissionIds: permissionId } }
       );
       // Update assignedRolesCount for the new permission

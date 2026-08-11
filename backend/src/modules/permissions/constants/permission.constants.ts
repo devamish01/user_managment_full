@@ -22,6 +22,7 @@ export const DEFAULT_PERMISSIONS = [
   { permissionId: "PRM_4D5E6F", id: "p5", name: "View Role Assignment", key: "pages.assignment", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show the Role Assignment tab in the sidebar" },
   { permissionId: "PRM_5E6F7A", id: "p6", name: "View Activity Logs", key: "pages.logs", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show the Activity Logs tab in the sidebar" },
   { permissionId: "PRM_6F7A8B", id: "p7", name: "View Settings", key: "pages.settings", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show the Settings tab in the sidebar" },
+  { permissionId: "PRM_6F7A8A", id: "p45", name: "View Overview", key: "pages.overview", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show the overview tab in the sidebar" },
 
   // ── User Management ──
   { permissionId: "PRM_7A8B9C", id: "p8", name: "Create User", key: "users.create", module: PERMISSION_MODULES.USER_MANAGEMENT, description: "Allow adding new users" },

@@ -1,7 +1,6 @@
 export * from "./constants/user.constants.js";
 export * from "./controllers/user.controller.js";
-export * from "./services/user.service.js";
-export * from "./model/index.js";
+export * from "./services/user.service.js";export * from "./services/seed.users.js";export * from "./model/index.js";
 export * from "./model/user.type.js";
 export { createUserSchema } from "./validations/create-user.schema.js";
 export { updateUserSchema } from "./validations/update-user.schema.js";

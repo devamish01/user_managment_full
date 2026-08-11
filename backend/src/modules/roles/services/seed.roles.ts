@@ -1,6 +1,6 @@
 import { Role } from "../model/index.js";
 import { Permission } from "@/modules/permissions/model/index.js";
-import { SUPER_ADMIN_ROLE_ID } from "../constants/role.constants.js";
+import { DEFAULT_VIEWER_ROLE_ID, SUPER_ADMIN_ROLE_ID } from "../constants/role.constants.js";
 import { createHash } from "crypto";
 
 /**
@@ -45,7 +45,7 @@ const defaultRoles = [
     createdBy: "SYSTEM",
   },
   {
-    roleId: generateRoleId("Default Viewer"),
+    roleId: DEFAULT_VIEWER_ROLE_ID,
     name: "Default Viewer",
     description: "Read-only access to Dashboard and Users List — fallback role when other roles are deleted",
     color: "from-slate-500 to-slate-600",

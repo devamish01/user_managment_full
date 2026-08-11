@@ -60,7 +60,7 @@ const session = await findActiveSession(
     userId: user.userId,
     role: user.role,
     roleId: user.roleId,
-    isSuperAdmin: user.roleId === "ROL_SUPER_ADMIN",
+    isSuperAdmin: user.roleId === "r1",
     sessionId: session.sessionId,
   });
 

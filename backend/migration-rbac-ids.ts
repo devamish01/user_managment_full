@@ -76,7 +76,7 @@ async function migrate() {
     let newRoleId: string;
     
     if (role.roleId === "r1" || role.name === "Super Admin") {
-      newRoleId = "ROL_SUPER_ADMIN";
+      newRoleId = "r1";
     } else {
       newRoleId = generateRoleId(role.name);
     }
@@ -88,14 +88,14 @@ async function migrate() {
       permissionIdMap.get(oldPermId) || oldPermId
     );
     
-    if (role.roleId !== newRoleId || JSON.stringify(role.permissionIds) !== JSON.stringify(newPermissionIds) || role.isSuperAdmin !== (newRoleId === "ROL_SUPER_ADMIN")) {
+    if (role.roleId !== newRoleId || JSON.stringify(role.permissionIds) !== JSON.stringify(newPermissionIds) || role.isSuperAdmin !== (newRoleId === "r1")) {
       await Role.updateOne(
         { _id: role._id },
         { 
           $set: { 
             roleId: newRoleId,
             permissionIds: newPermissionIds,
-            isSuperAdmin: newRoleId === "ROL_SUPER_ADMIN"
+            isSuperAdmin: newRoleId === "r1"
           } 
         }
       );
@@ -151,13 +151,13 @@ async function migrate() {
   const roleCheck = await Role.find({}).lean();
   let roleOk = true;
   for (const r of roleCheck) {
-    const expectedRoleId = r.name === "Super Admin" ? "ROL_SUPER_ADMIN" : generateRoleId(r.name);
+    const expectedRoleId = r.name === "Super Admin" ? "r1" : generateRoleId(r.name);
     if (r.roleId !== expectedRoleId) {
       console.log(`   ❌ Role ${r.name}: roleId=${r.roleId}, expected=${expectedRoleId}`);
       roleOk = false;
     }
-    if (r.isSuperAdmin !== (r.roleId === "ROL_SUPER_ADMIN")) {
-      console.log(`   ❌ Role ${r.name}: isSuperAdmin=${r.isSuperAdmin}, expected=${r.roleId === "ROL_SUPER_ADMIN"}`);
+    if (r.isSuperAdmin !== (r.roleId === "r1")) {
+      console.log(`   ❌ Role ${r.name}: isSuperAdmin=${r.isSuperAdmin}, expected=${r.roleId === "r1"}`);
       roleOk = false;
     }
     // Check permissionIds are new format
