@@ -3,6 +3,7 @@ import { mockRoles } from "@/mocks/roles";
 import { mockPermissions } from "@/mocks/permissions";
 import { mockLogs } from "@/mocks/logs";
 import { mockNavigation } from "@/mocks/navigation";
+import { mockPayments } from "@/mocks/payments";
 
 /* ==========================================================
  * In-Memory Database
@@ -18,4 +19,5 @@ export const db = {
   permissions: [...mockPermissions],
   logs: [...mockLogs],
   navigation: structuredClone(mockNavigation),
+  payments: [...mockPayments],
 };

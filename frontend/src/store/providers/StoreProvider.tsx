@@ -25,6 +25,7 @@ import useNavigationStore from "@/modules/navigation/store";
 import useUsersStore from "@/modules/users/store";
 
 import { StoreCtx } from "../context/StoreContext";
+import { usePaymentsStore } from "@/modules/payments/store";
 
 export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   // console.count('render store provider')
@@ -32,7 +33,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   /* ── Feature module stores (composition) ────────────────────────── */
   const rolesStore = useRolesStore();
   const usersStore = useUsersStore();
-
+  const pymentstore =usePaymentsStore();
   const permissionsStore = usePermissionsStore({
     onRolesRefresh: rolesStore.getRoles,
   });
@@ -110,6 +111,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
       ...rolesStore,
       ...permissionsStore,
       ...usersStore,
+      ...pymentstore,
   
       // Global state
       // logs,
@@ -143,6 +145,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
       rolesStore,
       permissionsStore,
       usersStore,
+      pymentstore,
       // logs,
       navigationStore,
       authorizationReady,

@@ -13,6 +13,13 @@ export const formatDateTime = (iso: string) =>
     hour: "numeric",
     minute: "2-digit",
   });
+export const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
 
 export const timeAgo = (iso: string) => {
   const diff = Date.now() - +new Date(iso);

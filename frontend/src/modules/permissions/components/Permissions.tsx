@@ -23,6 +23,7 @@ const moduleIcons: Record<string, React.ReactNode> = {
   "Permissions": <Key size={18} />,
   "Activity Logs": <Activity size={18} />,
   "Settings": <SettingsIcon size={18} />,
+  "Transaction Details": <Activity size={18} />,
 };
 
 const ModuleCard = ({ moduleName, perms, uiPerms, onEdit, onDelete }: any) => {
@@ -32,6 +33,7 @@ const ModuleCard = ({ moduleName, perms, uiPerms, onEdit, onDelete }: any) => {
   const sectionPerms = uiPerms.filter((p: any) => p.name.startsWith("Section:"));
   const filterPerms = uiPerms.filter((p: any) => p.name.startsWith("Filter:"));
   const togglePerms = uiPerms.filter((p: any) => p.name.startsWith("Toggle:"));
+  const buttonPerms = uiPerms.filter((p: any) => p.name.startsWith("Button:"));
   const uncategorizedPerms = uiPerms.filter((p: any) => !p.name.includes(":"));
 
   const tabs = [];
@@ -78,6 +80,7 @@ const ModuleCard = ({ moduleName, perms, uiPerms, onEdit, onDelete }: any) => {
             {sectionPerms.length > 0 && <div><p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Sections</p><div className="grid grid-cols-1 gap-2 md:grid-cols-2">{sectionPerms.map(renderPerm)}</div></div>}
             {filterPerms.length > 0 && <div><p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filters</p><div className="grid grid-cols-1 gap-2 md:grid-cols-2">{filterPerms.map(renderPerm)}</div></div>}
             {togglePerms.length > 0 && <div><p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Toggles</p><div className="grid grid-cols-1 gap-2 md:grid-cols-2">{togglePerms.map(renderPerm)}</div></div>}
+            {buttonPerms.length > 0 && <div><p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Buttons</p><div className="grid grid-cols-1 gap-2 md:grid-cols-2">{buttonPerms.map(renderPerm)}</div></div>}
             {uncategorizedPerms.length > 0 && <div><p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Other UI</p><div className="grid grid-cols-1 gap-2 md:grid-cols-2">{uncategorizedPerms.map(renderPerm)}</div></div>}
           </div>
         )}

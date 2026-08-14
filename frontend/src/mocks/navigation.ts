@@ -13,9 +13,18 @@ export const mockNavigation: NavigationItem[] = [
     ],
   },
   {
+    id: "nav-payments",
+    title: "Payments",
+    order: 2,
+    visible: true,
+    children: [
+      { id: "nav-transactions", title: "Transactions", icon: "credit-card", route: "transactions", permission: "pages.transactions", order: 1, visible: true, children: [] },
+    ],
+  },
+  {
     id: "nav-access-control",
     title: "Access Control",
-    order: 2,
+    order: 3,
     visible: true,
     children: [
       { id: "nav-assignment", title: "Role Assignment", icon: "toggle-right", route: "assignment", permission: "pages.assignment", order: 1, visible: true, children: [] },
@@ -25,7 +34,7 @@ export const mockNavigation: NavigationItem[] = [
   {
     id: "nav-system",
     title: "System",
-    order: 3,
+    order: 4,
     visible: true,
     children: [
       { id: "nav-logs", title: "Activity Logs", icon: "activity", route: "logs", permission: "pages.logs", order: 1, visible: true, children: [] },

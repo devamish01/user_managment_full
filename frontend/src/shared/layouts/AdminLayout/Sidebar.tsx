@@ -35,6 +35,7 @@ const routeNameToPath: Record<string, string> = {
   assignment:  "/assignment",
   logs:        "/logs",
   settings:    "/settings",
+  transactions: "/payments/transactions",
 };
 
 /** Maps backend icon identifiers to the existing visual icon set. */

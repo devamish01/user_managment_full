@@ -19,7 +19,7 @@ import {
 
 import { mockAuth, superAdminPassword } from "@/mocks/auth";
 import { getToken, removeToken } from "@/core/auth/token";
-import type { User, Role, Permission, ActivityLog } from "@/lib/types";
+import type { User, Role, Permission, ActivityLog, PaymentRecord } from "@/lib/types";
 import { db } from "./db";
 
 /**
@@ -1140,6 +1140,97 @@ mockClient.register("DELETE", "/permissions/:id", async ({ pathParams }) => {
 mockClient.register("GET", "/navigation", async () =>
   successResponse(structuredClone(db.navigation), "Navigation retrieved"),
 );
+
+/* ─────────────── PAYMENTS ─────────────── */
+
+mockClient.register("GET", "/payments", async ({ queryParams }) => {
+  // Filter by userId if provided
+  let payments = db.payments;
+  if (queryParams.userId) {
+    payments = payments.filter((p) => p.user?.id === queryParams.userId);
+  }
+  
+  const { rows, pagination } = applyListQuery(payments, queryParams, {
+    searchFields: ["id", "utrNumber", "notes"],
+    filterFields: ["status", "direction", "category", "paymentSource", "paymentMethod"],
+    sortFields: ["id", "amount", "paymentDate", "createdAt"],
+  });
+  return successResponse(rows, "Payments retrieved", pagination);
+});
+
+mockClient.register("GET", "/payments/:id", async ({ pathParams }) => {
+  const payment = db.payments.find((p) => p.id === pathParams.id);
+  if (!payment) return notFoundError(`Payment ${pathParams.id}`);
+  return successResponse(payment, "Payment retrieved");
+});
+
+mockClient.register("POST", "/payments", async ({ body }) => {
+  const payload = (body || {}) as Partial<PaymentRecord>;
+  const errs = requireFields(payload, ["user", "amount", "direction", "status", "category", "paymentSource", "paymentMethod", "paymentDate"]);
+  if (errs.length) return validationError(errs);
+  
+  const newPayment = {
+    ...(payload as Record<string, unknown>),
+    id: `TXN-${new Date().getFullYear()}-${String(db.payments.length + 1).padStart(3, "0")}`,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } as PaymentRecord;
+  db.payments.unshift(newPayment);
+  return createdResponse(newPayment, "Payment created");
+});
+
+mockClient.register("PUT", "/payments/:id", async ({ pathParams, body }) => {
+  const index = db.payments.findIndex((p) => p.id === pathParams.id);
+  if (index === -1) return notFoundError(`Payment ${pathParams.id}`);
+  const payload = (body || {}) as Partial<PaymentRecord>;
+  const now = new Date().toISOString();
+  
+  db.payments[index] = { 
+    ...db.payments[index], 
+    ...payload, 
+    updatedAt: now,
+  };
+  
+  return successResponse(db.payments[index], "Payment replaced");
+});
+
+mockClient.register("PATCH", "/payments/:id", async ({ pathParams, body }) => {
+  const index = db.payments.findIndex((p) => p.id === pathParams.id);
+  if (index === -1) return notFoundError(`Payment ${pathParams.id}`);
+  const payload = (body || {}) as Partial<PaymentRecord>;
+  db.payments[index] = { ...db.payments[index], ...payload, updatedAt: new Date().toISOString() };
+  return successResponse(db.payments[index], "Payment updated");
+});
+
+mockClient.register("DELETE", "/payments/:id", async ({ pathParams }) => {
+  const index = db.payments.findIndex((p) => p.id === pathParams.id);
+  if (index === -1) return notFoundError(`Payment ${pathParams.id}`);
+  db.payments.splice(index, 1);
+  return successResponse({ ok: true }, "Payment deleted");
+});
+
+mockClient.register("GET", "/payments/transactions", async ({ queryParams }) => {
+  const userId = queryParams.userId;
+  let payments = db.payments;
+  
+  // Filter by userId if provided
+  if (userId) {
+    payments = payments.filter(p => p.user?.id === userId);
+  }
+  
+  const { rows, pagination } = applyListQuery(payments, queryParams, {
+    searchFields: ["id", "utrNumber", "notes"],
+    filterFields: ["status", "direction", "category", "paymentSource", "paymentMethod"],
+    sortFields: ["id", "amount", "paymentDate", "createdAt"],
+  });
+  return successResponse(rows, "Transactions retrieved", pagination);
+});
+
+mockClient.register("GET", "/payments/transactions/:id", async ({ pathParams }) => {
+  const payment = db.payments.find((p) => p.id === pathParams.id);
+  if (!payment) return notFoundError(`Transaction ${pathParams.id}`);
+  return successResponse(payment, "Transaction retrieved");
+});
 
 
 
