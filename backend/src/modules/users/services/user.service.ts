@@ -10,6 +10,7 @@ import { getDateRangeFromPeriod } from "@/shared/utils/index.js";
 import type { CreateUserInput } from "@/modules/users/index.js";
 import type { UpdateUserInput } from "@/modules/users/index.js";
 import { isProtectedUser, assertUserNotProtected } from "@/modules/users/utils/index.js";
+import { hashPassword } from "@/modules/auth/utils/hash-password.js";
 
 interface PaginatedResult<T> {
   data: T[];
@@ -241,7 +242,7 @@ export const createUser = async (data: CreateUserInput, approvedByUserId?: strin
   const userId = await generateUserId();
   const normalizedStatus = data.status ? data.status.toLowerCase() : "pending";
   const isApproved = normalizedStatus === "active";
-  
+  const hashedPassword = await hashPassword(data.password);
   const newUserPayload = {
     userId,
     username,
@@ -254,8 +255,7 @@ export const createUser = async (data: CreateUserInput, approvedByUserId?: strin
     bio: data.bio || "",
     roleId: data.roleId!,
     status: normalizedStatus,
-    password: (data as any).password || "",
-    // Role assignment tracking
+    password: hashedPassword,    // Role assignment tracking
     roleAssignedType: "MANUAL",
     roleAssignedBy: approvedByUserId || "SYSTEM",
     roleAssignedAt: new Date(),

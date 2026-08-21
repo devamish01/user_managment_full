@@ -3,4 +3,4 @@
  * Exposes only the default so module-level `export *` from this folder
  * does not collide with the named re-export that lives in `./hooks`.
  */
-export { default } from "./users.store";
+export { default, useUsersStore } from "./users.store";

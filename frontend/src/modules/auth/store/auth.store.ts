@@ -13,11 +13,13 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { AuthService } from "../services";
 import { setToken, removeToken } from "@/core/auth/token";
-import type { AuthState, LoginCredentials } from "../types";
+import { getErrorMessage } from "@/core/api/errorUtils";
+import type { AuthState, LoginCredentials, RegisterCredentials } from "../types";
 import type { User } from "@/lib/types";
 
 export interface AuthStoreState extends AuthState {
   login: (credentials: LoginCredentials) => Promise<User | null>;
+  register: (credentials: RegisterCredentials) => Promise<User | null>;
   logout: () => Promise<void>;
   loadCurrentUser: () => Promise<User | null>;
   switchUser: (roleId: string) => Promise<User | null>;
@@ -58,7 +60,21 @@ const login = async (credentials: LoginCredentials): Promise<User | null> => {
     patch({ currentUser: user, isAuthenticated: Boolean(user), loading: false });
     return user;
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Login failed";
+    const message = getErrorMessage(err, "Login failed");
+    patch({ error: message, loading: false });
+    return null;
+  }
+};
+
+const register = async (credentials: RegisterCredentials): Promise<User | null> => {
+  patch({ loading: true, error: null });
+  try {
+    const user = await AuthService.register(credentials);
+    // Registration succeeds but doesn't auto-login; user must log in separately
+    patch({ loading: false });
+    return user;
+  } catch (err) {
+    const message = getErrorMessage(err, "Registration failed");
     patch({ error: message, loading: false });
     return null;
   }
@@ -84,7 +100,7 @@ const loadCurrentUser = async (): Promise<User | null> => {
     patch({ currentUser: user, isAuthenticated: Boolean(user) });
     return user;
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to load session";
+    const message = getErrorMessage(err, "Failed to load session");
     patch({ error: message });
     return null;
   } finally {
@@ -101,7 +117,7 @@ export const switchUser = async (roleId: string): Promise<User | null> => {
     patch({ session: sess });
     return user;
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to switch user";
+    const message = getErrorMessage(err, "Failed to switch user");
     patch({ error: message });
     return null;
   } finally {
@@ -119,6 +135,7 @@ export const useAuthStore = (): AuthStoreState => {
     loading: state.loading,
     error: state.error,
     login: useCallback(login, []),
+    register: useCallback(register, []),
     logout: useCallback(logout, []),
     loadCurrentUser: useCallback(loadCurrentUser, []),
     switchUser: useCallback(switchUser, []),

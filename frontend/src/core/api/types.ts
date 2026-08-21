@@ -44,6 +44,10 @@ export interface ApiResponse<T = unknown> {
   data: T | null;
   meta: ApiResponseMeta;
   errors: ApiError[] | null;
+  /** Backend error code (e.g., "VALIDATION_ERROR", "CONFLICT", "UNAUTHORIZED") */
+  errorCode?: string;
+  /** Field-level validation errors: { fieldName: ["error message 1", "error message 2"] } */
+  fields?: Record<string, string[]>;
 }
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";

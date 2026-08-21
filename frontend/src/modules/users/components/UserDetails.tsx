@@ -29,10 +29,9 @@ import { formatFullDate, formatTime } from "@/shared/utils/date";
 import { cn } from "@/shared/utils/cn";
 import { SharedButton, SharedBadge, SharedModal, SharedInput } from "@/shared/components";
 import { SharedTable } from "@/shared/components/SharedTable";
-import { UserService } from "../services";
 import type { Status, User } from "@/lib/types";
 import useUsersStore from "@/modules/users/store";
-import { useToast } from "@/components/ui/toast";
+import { useToastError } from "@/core/api/toastUtils";
 import { formatCurrency } from "@/lib/helpers";
 import { useNavigate } from "react-router-dom";
 import type { PaymentRecord, PaymentDirection, PaymentStatus, PaymentCategory } from "@/modules/payments/types";
@@ -46,23 +45,10 @@ export interface UserDetailsProps {
 
 export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
   const { roles } = useStore();
-  const { users, updateUser, getUsers } = useUsersStore();
+  const { updateUser, getUserById, resetUserPassword  } = useUsersStore();
   const { getPaymentsByUserId } = usePaymentsStore();
   const navigate = useNavigate();
-
-  const [remoteUser, setRemoteUser] = React.useState<User | null>(null);
-  const [loadingUser, setLoadingUser] = React.useState(false);
-  const [userError, setUserError] = React.useState<string | null>(null);
-  const [expanded, setExpanded] = React.useState(true);
-
-  // Payment state - local to this component
-  const [userPayments, setUserPayments] = React.useState<PaymentRecord[]>([]);
-  const [loadingPayments, setLoadingPayments] = React.useState(false);
-  const [paymentError, setPaymentError] = React.useState<string | null>(null);
-
-  const user = users.find((u) => u.id === id) ?? remoteUser;
-
-  // Permission checks
+  // Permission checks - must be before conditional returns
   const {
     canEdit,
     canResetPassword,
@@ -72,25 +58,19 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
     viewPaymentAmount: canViewPaymentAmount,
   } = useUserDetailsPermissions();
 
-  // Resolve approver name from users list
-  const approverName = React.useMemo(() => {
-    if (!user?.approvedBy) return undefined;
-    const approver = users.find((u) => u.id === user.approvedBy);
-    return approver ? `${approver.firstName} ${approver.lastName}`.trim() : undefined;
-  }, [user?.approvedBy, users]);
+  const { toastError, toastSuccess } = useToastError();
 
-  // Create user object with resolved approver name
-  const userWithApprover = React.useMemo(() => {
-    if (!user) return user;
-    return {
-      ...user,
-      approvedByName: approverName,
-    };
-  }, [user, approverName]);
+  const [user, setUser] = React.useState<User | null>(null);
+  const [loadingUser, setLoadingUser] = React.useState(false);
+  const [userError, setUserError] = React.useState<string | null>(null);
+  const [expanded, setExpanded] = React.useState(true);
 
-  const displayUser = userWithApprover!;
-  const role = roles.find((r) => r.id === displayUser?.roleId);
+  // Payment state - local to this component
+  const [userPayments, setUserPayments] = React.useState<PaymentRecord[]>([]);
+  const [loadingPayments, setLoadingPayments] = React.useState(false);
+  const [paymentError, setPaymentError] = React.useState<string | null>(null);
 
+  // Form state
   const [isEditing, setIsEditing] = React.useState(false);
   const [form, setForm] = React.useState({
     firstName: "",
@@ -112,8 +92,10 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
   const [resetConfirmPassword, setResetConfirmPassword] = React.useState("");
   const [resetLoading, setResetLoading] = React.useState(false);
   const [resetErrors, setResetErrors] = React.useState<Record<string, string>>({});
-  const { toast } = useToast();
 
+  const role = roles.find((r) => r.id === user?.roleId);
+
+  // Load user's payments when user is loaded
   const loadUserPayments = React.useCallback(async (userId: string) => {
     setLoadingPayments(true);
     setPaymentError(null);
@@ -128,12 +110,11 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
     }
   }, [getPaymentsByUserId]);
 
-  // Load user's payments when user is loaded
   React.useEffect(() => {
-    if (displayUser?.id) {
-      loadUserPayments(displayUser.id);
+    if (user?.id) {
+      loadUserPayments(user.id);
     }
-  }, [displayUser?.id, loadUserPayments]);
+  }, [user?.id, loadUserPayments]);
 
   // Compute payment stats
   const paymentStats = React.useMemo(() => {
@@ -150,6 +131,40 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
   const recentTransactions = React.useMemo(() => {
     return [...userPayments].sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()).slice(0, 5);
   }, [userPayments]);
+
+  // Table columns for recent transactions - must be before conditional returns
+  const transactionColumns = React.useMemo(() => [
+    { key: "id", label: "Transaction ID", render: (_value: string, row: PaymentRecord) => <span className="font-medium text-foreground">{row.id}</span> },
+    { key: "amount", label: "Amount", render: (_value: number, row: PaymentRecord) => <span className="font-semibold text-foreground">{formatCurrency(row.amount)}</span> },
+    { key: "direction", label: "Payment Type", render: (_value: PaymentDirection, row: PaymentRecord) => getDirectionBadge(row.direction) },
+    { key: "status", label: "Status", render: (_value: PaymentStatus, row: PaymentRecord) => getStatusBadge(row.status) },
+    { key: "category", label: "Category", render: (_value: PaymentCategory, row: PaymentRecord) => getCategoryBadge(row.category) },
+    { key: "paymentDate", label: "Date", render: (_value: string, row: PaymentRecord) => <span className="text-muted-foreground">{formatFullDate(row.paymentDate)}</span> },
+    { key: "actions", label: "Actions", render: (_value: unknown, row: PaymentRecord) => (
+      <SharedButton variant="ghost" size="sm" onClick={() => navigate(`/payments/transactions/${row.id}`)}>
+        <ExternalLink className="h-3.5 w-3.5" /> View Details
+      </SharedButton>
+    ) },
+  ], []);
+
+  // Helper for direction badge
+  const getDirectionBadge = (direction: PaymentDirection) => {
+    if (direction === "credit") {
+      return <SharedBadge variant="success" className="text-xs">Credit</SharedBadge>;
+    }
+    return <SharedBadge variant="destructive" className="text-xs">Debit</SharedBadge>;
+  };
+
+  // Helper for status badge
+  const getStatusBadge = (status: PaymentStatus) => {
+    const variant = status === "Completed" ? "success" : status === "Pending" ? "warning" : status === "Rejected" ? "destructive" : "default";
+    return <SharedBadge variant={variant} className="text-xs">{status}</SharedBadge>;
+  };
+
+  // Helper for category badge
+  const getCategoryBadge = (category: PaymentCategory) => {
+    return <SharedBadge variant="secondary" className="text-xs">{category}</SharedBadge>;
+  };
 
   const validateResetForm = () => {
     const newErrors: Record<string, string> = {};
@@ -178,23 +193,34 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleResetPassword = async () => {
-    if (!displayUser || !validateResetForm()) return;
+ const handleResetPassword = async () => {
+  if (!user || !validateResetForm()) return;
 
-    setResetLoading(true);
-    try {
-      await UserService.resetUserPassword(displayUser.id, resetPassword);
-      toast({ type: "success", title: "Password reset successfully" });
-      setResetPasswordOpen(false);
-      setResetPassword("");
-      setResetConfirmPassword("");
-      setResetErrors({});
-    } catch (error: any) {
-      toast({ type: "error", title: "Reset failed", description: error.message });
-    } finally {
-      setResetLoading(false);
+  setResetLoading(true);
+
+  try {
+    const response = await resetUserPassword(
+      user.id,
+      resetPassword,
+      resetConfirmPassword
+    );
+
+    toastSuccess(response);
+
+    setResetPasswordOpen(false);
+    setResetPassword("");
+    setResetConfirmPassword("");
+    setResetErrors({});
+  } catch (error: unknown) {
+    const fieldErrors = toastError(error, { title: "Reset failed" });
+
+    if (Object.keys(fieldErrors).length > 0) {
+      setResetErrors(fieldErrors);
     }
-  };
+  } finally {
+    setResetLoading(false);
+  }
+};
 
   const openResetPassword = () => {
     setResetPasswordOpen(true);
@@ -207,50 +233,50 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
     setResetErrors({});
   };
 
+  // Sync form with user when it changes
   React.useEffect(() => {
-    if (displayUser) {
+    if (user) {
       setForm({
-        firstName: displayUser.firstName || "",
-        lastName: displayUser.lastName || "",
-        email: displayUser.email || "",
-        phone: displayUser.phone || "",
-        username: displayUser.username || "",
-        roleId: displayUser.roleId || "",
-        status: displayUser.status,
-        location: displayUser.location || "",
-        jobTitle: displayUser.jobTitle || "",
-        address: displayUser.address || "",
-        bio: displayUser.bio || "",
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        username: user.username || "",
+        roleId: user.roleId || "",
+        status: user.status,
+        location: user.location || "",
+        jobTitle: user.jobTitle || "",
+        address: user.address || "",
+        bio: user.bio || "",
       });
     }
-  }, [displayUser]);
+  }, [user]);
 
   React.useEffect(() => {
-    setRemoteUser(null);
-    setUserError(null);
-  }, [id]);
-
-  React.useEffect(() => {
-    if (user || !id) return;
+    if (!id) return;
 
     setLoadingUser(true);
     setUserError(null);
 
-    UserService.getUserById(id)
+    getUserById(id)
       .then((response) => {
         if (response.success && response.data) {
-          setRemoteUser(response.data);
+          setUser(response.data);
         } else {
           setUserError(response.message || "User not found.");
         }
       })
       .catch((error: unknown) => {
-        setUserError(error instanceof Error ? error.message : "Failed to load user.");
+        setUserError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load user."
+        );
       })
       .finally(() => {
         setLoadingUser(false);
       });
-  }, [id, user]);
+  }, [id, getUserById]);
 
   if (loadingUser) {
     return (
@@ -260,7 +286,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
     );
   }
 
-  if (!userWithApprover) {
+  if (!user) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <p className="text-muted-foreground">{userError ?? "User not found."}</p>
@@ -269,74 +295,76 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
     );
   }
 
+  // Editable fields that can be sent to backend
+  const editableFields = [
+    "firstName",
+    "lastName",
+    "email",
+    "phone",
+    "username",
+    "roleId",
+    "status",
+    "location",
+    "jobTitle",
+    "address",
+    "bio",
+  ] as const;
+
   const handleSave = async () => {
     if (!form.firstName || !form.lastName || !form.email) {
       return;
     }
+
+    // Build payload with only changed fields
+    const originalUser = user;
+    const changedFields: Record<string, any> = {};
+
+    for (const field of editableFields) {
+      const formValue = form[field];
+      const originalValue = originalUser[field];
+      
+      // Only include if value actually changed
+      if (formValue !== originalValue) {
+        changedFields[field] = formValue;
+      }
+    }
+
+    // If nothing changed, just exit edit mode
+    if (Object.keys(changedFields).length === 0) {
+      setIsEditing(false);
+      return;
+    }
+
     try {
-      await updateUser(userWithApprover.id, form);
-      await getUsers();
+      const response = await updateUser(id, changedFields);
+
+      toastSuccess(response);
       setIsEditing(false);
     } catch (error: unknown) {
-      console.error("Update failed", error);
+      toastError(error, { title: "Update failed" });
     }
   };
 
   const handleCancel = () => {
     setForm({
-      firstName: displayUser.firstName || "",
-      lastName: displayUser.lastName || "",
-      email: displayUser.email || "",
-      phone: displayUser.phone || "",
-      username: displayUser.username || "",
-      roleId: displayUser.roleId || "",
-      status: displayUser.status,
-      location: displayUser.location || "",
-      jobTitle: displayUser.jobTitle || "",
-      address: displayUser.address || "",
-      bio: displayUser.bio || "",
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      username: user.username || "",
+      roleId: user.roleId || "",
+      status: user.status,
+      location: user.location || "",
+      jobTitle: user.jobTitle || "",
+      address: user.address || "",
+      bio: user.bio || "",
     });
     setIsEditing(false);
   };
 
   const handleViewAllTransactions = () => {
-    navigate(`/payments/transactions?userId=${displayUser.id}`);
+    navigate(`/payments/transactions?userId=${user.id}`);
   };
-
-
-    // Helper for direction badge
-  const getDirectionBadge = (direction: PaymentDirection) => {
-    if (direction === "credit") {
-      return <SharedBadge variant="success" className="text-xs">Credit</SharedBadge>;
-    }
-    return <SharedBadge variant="destructive" className="text-xs">Debit</SharedBadge>;
-  };
-
-  // Helper for status badge
-  const getStatusBadge = (status: PaymentStatus) => {
-    const variant = status === "Completed" ? "success" : status === "Pending" ? "warning" : status === "Rejected" ? "destructive" : "default";
-    return <SharedBadge variant={variant} className="text-xs">{status}</SharedBadge>;
-  };
-
-  // Helper for category badge
-  const getCategoryBadge = (category: PaymentCategory) => {
-    return <SharedBadge variant="secondary" className="text-xs">{category}</SharedBadge>;
-  };
-
-  // Table columns for recent transactions
-  const transactionColumns = React.useMemo(() => [
-    { key: "id", label: "Transaction ID", render: (_value: string, row: PaymentRecord) => <span className="font-medium text-foreground">{row.id}</span> },
-    { key: "amount", label: "Amount", render: (_value: number, row: PaymentRecord) => <span className="font-semibold text-foreground">{formatCurrency(row.amount)}</span> },
-    { key: "direction", label: "Payment Type", render: (_value: PaymentDirection, row: PaymentRecord) => getDirectionBadge(row.direction) },
-    { key: "status", label: "Status", render: (_value: PaymentStatus, row: PaymentRecord) => getStatusBadge(row.status) },
-    { key: "category", label: "Category", render: (_value: PaymentCategory, row: PaymentRecord) => getCategoryBadge(row.category) },
-    { key: "paymentDate", label: "Date", render: (_value: string, row: PaymentRecord) => <span className="text-muted-foreground">{formatFullDate(row.paymentDate)}</span> },
-    { key: "actions", label: "Actions", render: (_value: unknown, row: PaymentRecord) => (
-      <SharedButton variant="ghost" size="sm" onClick={() => navigate(`/payments/transactions/${row.id}`)}>
-        <ExternalLink className="h-3.5 w-3.5" /> View Details
-      </SharedButton>
-    ) },
-  ], []);
 
   return (
     <>
@@ -352,16 +380,16 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
           <div className="flex flex-col gap-4 py-6 px-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               <div className={cn("relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br font-semibold text-white ring-4 ring-card from-indigo-500 to-purple-500 w-16 h-16 text-xl")}>
-                <span>{displayUser.firstName ? `${displayUser.firstName[0]}${displayUser.lastName?.[0] || ""}`.toUpperCase() : "NU"}</span>
+                <span>{user.firstName ? `${user.firstName[0]}${user.lastName?.[0] || ""}`.toUpperCase() : "NU"}</span>
               </div>
               <div>
-                <h2 className="text-2xl font-bold">{displayUser.firstName} {displayUser.lastName}</h2>
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"><Mail className="h-3.5 w-3.5" />{displayUser.email}</p>
-                <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted-foreground"><Phone className="h-3.5 w-3.5" />{displayUser.phone || "—"}</p>
+                <h2 className="text-2xl font-bold">{user.firstName} {user.lastName}</h2>
+                <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"><Mail className="h-3.5 w-3.5" />{user.email}</p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted-foreground"><Phone className="h-3.5 w-3.5" />{user.phone || "—"}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <SharedBadge variant="secondary">{role?.name || "—"}</SharedBadge>
-                  <SharedBadge variant={statusToBadgeVariant(displayUser.status)}>{displayUser.status}</SharedBadge>
-                  <span className="text-xs text-muted-foreground">User ID · {displayUser.id}</span>
+                  <SharedBadge variant={statusToBadgeVariant(user.status)}>{user.status}</SharedBadge>
+                  <span className="text-xs text-muted-foreground">User ID · {user.id}</span>
                 </div>
               </div>
             </div>
@@ -395,14 +423,14 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2">
-                    <div className="space-y-1.5"><label className="text-sm font-medium">First Name</label><p className="text-lg font-medium">{displayUser.firstName}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Last Name</label><p className="text-lg font-medium">{displayUser.lastName}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Email</label><p className="font-medium">{displayUser.email}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Mobile Number</label><p className="font-medium">{displayUser.phone || "—"}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Location</label><p className="font-medium">{displayUser.location || "—"}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Job Title</label><p className="font-medium">{displayUser.jobTitle || "—"}</p></div>
-                    <div className="sm:col-span-2 space-y-1.5"><label className="text-sm font-medium">Address</label><p className="font-medium">{displayUser.address || "—"}</p></div>
-                    <div className="sm:col-span-2 space-y-1.5"><label className="text-sm font-medium">Bio</label><p className="font-normal text-muted-foreground">{displayUser.bio || "—"}</p></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">First Name</label><p className="text-lg font-medium">{user.firstName}</p></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">Last Name</label><p className="text-lg font-medium">{user.lastName}</p></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">Email</label><p className="font-medium">{user.email}</p></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">Mobile Number</label><p className="font-medium">{user.phone || "—"}</p></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">Location</label><p className="font-medium">{user.location || "—"}</p></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">Job Title</label><p className="font-medium">{user.jobTitle || "—"}</p></div>
+                    <div className="sm:col-span-2 space-y-1.5"><label className="text-sm font-medium">Address</label><p className="font-medium">{user.address || "—"}</p></div>
+                    <div className="sm:col-span-2 space-y-1.5"><label className="text-sm font-medium">Bio</label><p className="font-normal text-muted-foreground">{user.bio || "—"}</p></div>
                   </div>
                 </div>
               </div>
@@ -418,14 +446,14 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2">
-                    <div className="space-y-1.5"><label className="text-sm font-medium">User ID</label><p className="font-mono text-sm bg-muted px-3 py-1.5 rounded-md w-fit">{displayUser.id}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Username</label><p className="font-medium">{displayUser.username || "—"}</p></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">User ID</label><p className="font-mono text-sm bg-muted px-3 py-1.5 rounded-md w-fit">{user.id}</p></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">Username</label><p className="font-medium">{user.username || "—"}</p></div>
                     <div className="space-y-1.5"><label className="text-sm font-medium">Role</label><p className="font-medium">{role?.name || "—"}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Status</label><SharedBadge variant={statusToBadgeVariant(displayUser.status)}>{displayUser.status}</SharedBadge></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Join Date</label><p className="font-medium">{formatFullDate(displayUser.createdAt)}</p></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">Status</label><SharedBadge variant={statusToBadgeVariant(user.status)}>{user.status}</SharedBadge></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">Join Date</label><p className="font-medium">{formatFullDate(user.createdAt)}</p></div>
                     <div className="space-y-1.5"><label className="text-sm font-medium">Last Login</label><p className="font-medium">—</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Account Created</label><p className="font-medium">{formatFullDate(displayUser.createdAt)}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Last Updated</label><p className="font-medium">{formatFullDate(displayUser.updatedAt)}</p></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">Account Created</label><p className="font-medium">{formatFullDate(user.createdAt)}</p></div>
+                    <div className="space-y-1.5"><label className="text-sm font-medium">Last Updated</label><p className="font-medium">{formatFullDate(user.updatedAt)}</p></div>
                   </div>
                 </div>
               </div>
@@ -486,7 +514,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-semibold">Payments</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Aggregated payment activity for <span className="font-medium text-foreground">{displayUser.firstName} {displayUser.lastName}</span>.</p>
+                    <p className="text-sm text-muted-foreground mt-1">Aggregated payment activity for <span className="font-medium text-foreground">{user.firstName} {user.lastName}</span>.</p>
                   </div>
                   <SharedButton variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
                     {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -591,8 +619,8 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
                 <div className="md:col-span-2 space-y-1.5"><label className="text-sm font-medium">Bio</label><textarea className="flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} /></div>
               </div>
               <div className="border-t border-border pt-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2"><Hash size={14} /><span>User ID (non-editable):</span><span className="font-mono text-foreground">{displayUser.id}</span></div>
-                <div className="flex items-center gap-2 mt-1"><Calendar size={14} /><span>Joined on:</span><span className="font-medium text-foreground">{formatFullDate(displayUser.createdAt)} at {formatTime(displayUser.createdAt)}</span></div>
+                <div className="flex items-center gap-2"><Hash size={14} /><span>User ID (non-editable):</span><span className="font-mono text-foreground">{user.id}</span></div>
+                <div className="flex items-center gap-2 mt-1"><Calendar size={14} /><span>Joined on:</span><span className="font-medium text-foreground">{formatFullDate(user.createdAt)} at {formatTime(user.createdAt)}</span></div>
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <SharedButton variant="outline" onClick={handleCancel}><X size={14} className="mr-2" /> Cancel</SharedButton>
@@ -606,12 +634,12 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
     <SharedModal
       open={resetPasswordOpen}
       onClose={closeResetPassword}
-      title={`Reset Password for ${displayUser?.firstName} ${displayUser?.lastName}`}
+      title={`Reset Password for ${user?.firstName} ${user?.lastName}`}
       size="md"
     >
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Enter a new password for <strong>{displayUser?.firstName} {displayUser?.lastName}</strong> ({displayUser?.email}).
+          Enter a new password for <strong>{user?.firstName} {user?.lastName}</strong> ({user?.email}).
           The user will need to use this new password to log in.
         </p>
 

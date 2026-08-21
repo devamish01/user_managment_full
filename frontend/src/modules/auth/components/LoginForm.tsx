@@ -21,7 +21,7 @@ import { useAuth } from "../hooks";
 import { UserSwitcher } from "./UserSwitcher";
 import { DEMO_ACCOUNTS, ROLE_DISPLAY } from "@/core/authorization";
 import { dashboardRoutesConfig } from "@/modules/dashboard.routes";
-import { authRoutesConfig } from "../routes";
+import { authRoutesConfig } from "../routes.config";
 
 export const LoginForm: React.FC = () => {
   const { login, loading, error, isAuthenticated, currentUser } = useAuth();

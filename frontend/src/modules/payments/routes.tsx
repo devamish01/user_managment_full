@@ -15,11 +15,11 @@ export const paymentsRoutesConfig = {
 };
 
 const TransactionFormRoute: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { transactionId } = useParams<{ transactionId: string }>();
   const navigate = useNavigate();
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold">{id ? "Edit Transaction" : "New Transaction"}</h1>
+      <h1 className="text-2xl font-bold">{transactionId ? "Edit Transaction" : "New Transaction"}</h1>
       <p className="mt-4 text-gray-500">Transaction form page - to be implemented</p>
       <SharedButton onClick={() => navigate(paymentsRoutesConfig.transactions())} className="mt-4">
         Cancel
@@ -34,7 +34,6 @@ const TransactionFormRoute: React.FC = () => {
 export const paymentsRoutes: RouteObject[] = [
   {
     path: "payments",
-    element: <PermissionGuard permission="pages.payments" />,
     children: [
       {
         path: "transactions",
@@ -42,8 +41,8 @@ export const paymentsRoutes: RouteObject[] = [
         children: [
           { index: true, element: <TransactionsPage /> },
           { path: "new", element: <TransactionFormRoute /> },
-          { path: ":id/edit", element: <TransactionFormRoute /> },
-          { path: ":id", element: <TransactionDetailsPage /> },
+          { path: ":transactionId/edit", element: <TransactionFormRoute /> },
+          { path: ":transactionId", element: <TransactionDetailsPage /> },
         ],
       },
     ],

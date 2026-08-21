@@ -21,7 +21,7 @@ import {
 } from "@/components/ui";
 import { useStore } from "@/store";
 import { formatDateTime, timeAgo } from "@/lib/helpers";
-import { useToast } from "@/components/ui/toast";
+import { useToastError } from "@/core/api/toastUtils";
 import { useUsersStore } from "@/modules/users";
 
 const iconFor: Record<string, React.ReactNode> = {
@@ -47,7 +47,7 @@ export const ActivityLogs = () => {
   const logs = store.logs ?? [];
   const users = (useUsersStore().users ?? []);
 
-  const { toast } = useToast();
+  const { toastSuccess } = useToastError();
   const [search, setSearch] = React.useState("");
   const [type, setType] = React.useState("all");
 
@@ -79,7 +79,7 @@ export const ActivityLogs = () => {
             Full audit trail of actions across your workspace.
           </p>
         </div>
-        <Button variant="outline" onClick={() => toast({ type: "success", title: "Exported logs" })}>
+        <Button variant="outline" onClick={() => toastSuccess({ success: true, message: "Exported logs" })}>
           <Download size={14} /> Export CSV
         </Button>
       </div>

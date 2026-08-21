@@ -17,6 +17,9 @@ import {
   Settings,
   X,
   Sparkles,
+  CreditCard,
+  ShieldCheck,
+  User,
 } from "lucide-react";
 import { cn } from "@/utils/cn";
 import {
@@ -36,6 +39,7 @@ const routeNameToPath: Record<string, string> = {
   logs:        "/logs",
   settings:    "/settings",
   transactions: "/payments/transactions",
+  profile:     "/settings/profile",
 };
 
 /** Maps backend icon identifiers to the existing visual icon set. */
@@ -46,6 +50,18 @@ const navigationIcons: Record<string, React.ReactNode> = {
   key: <Key size={18} />,
   activity: <Activity size={18} />,
   settings: <Settings size={18} />,
+  "credit-card": <CreditCard size={18} />,
+  "shield-check": <ShieldCheck size={18} />,
+  user: <User size={18} />,
+};
+
+/** Check if the current location matches a route name (handles nested routes). */
+const isRouteActive = (routeName: string | undefined, pathname: string): boolean => {
+  if (!routeName) return false;
+  const routePath = routeNameToPath[routeName];
+  if (!routePath) return false;
+  // Exact match for root-level routes, prefix match for nested routes
+  return pathname === routePath || pathname.startsWith(routePath + "/");
 };
 
 export const Sidebar = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
@@ -58,9 +74,8 @@ export const Sidebar = ({ open, onClose }: { open: boolean; onClose: () => void 
   React.useEffect(() => {
     getNavigation();
   }, [getNavigation]);
-  // Derive the active route name from the first URL segment.
-  const currentRouteName = location.pathname.split("/").filter(Boolean)[0] ?? "dashboard";
-  const isActive = (name?: string) => Boolean(name && name === currentRouteName);
+  
+  const isActive = (name?: string) => isRouteActive(name, location.pathname);
   const currentRole = roles.find((r) => r.id === currentRoleId);
 
   const visibleNav = navigation

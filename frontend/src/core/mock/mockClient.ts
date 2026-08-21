@@ -19,7 +19,8 @@ import {
 
 import { mockAuth, superAdminPassword } from "@/mocks/auth";
 import { getToken, removeToken } from "@/core/auth/token";
-import type { User, Role, Permission, ActivityLog, PaymentRecord } from "@/lib/types";
+import type { User, Role, Permission, ActivityLog } from "@/lib/types";
+import type { PaymentRecord } from "@/modules/payments/types";
 import { db } from "./db";
 
 /**
@@ -1147,31 +1148,55 @@ mockClient.register("GET", "/payments", async ({ queryParams }) => {
   // Filter by userId if provided
   let payments = db.payments;
   if (queryParams.userId) {
-    payments = payments.filter((p) => p.user?.id === queryParams.userId);
+    payments = payments.filter((p) => p.userId === queryParams.userId);
   }
   
   const { rows, pagination } = applyListQuery(payments, queryParams, {
-    searchFields: ["id", "utrNumber", "notes"],
+    searchFields: ["transactionId", "utrNumber", "notes"],
     filterFields: ["status", "direction", "category", "paymentSource", "paymentMethod"],
-    sortFields: ["id", "amount", "paymentDate", "createdAt"],
+    sortFields: ["transactionId", "amount", "paymentDate", "createdAt"],
   });
   return successResponse(rows, "Payments retrieved", pagination);
 });
 
 mockClient.register("GET", "/payments/:id", async ({ pathParams }) => {
-  const payment = db.payments.find((p) => p.id === pathParams.id);
+  const payment = db.payments.find((p) => p.transactionId === pathParams.id);
   if (!payment) return notFoundError(`Payment ${pathParams.id}`);
   return successResponse(payment, "Payment retrieved");
 });
 
+let mockTransactionIdCounter = 0;
+
+const initializeMockTransactionIdCounter = () => {
+  if (mockTransactionIdCounter === 0 && db.payments.length > 0) {
+    const lastPayment = db.payments.reduce((latest, p) => {
+      const match = p.transactionId?.match(/TXN-(\d+)/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        return num > latest ? num : latest;
+      }
+      return latest;
+    }, 0);
+    mockTransactionIdCounter = lastPayment;
+  }
+};
+
 mockClient.register("POST", "/payments", async ({ body }) => {
   const payload = (body || {}) as Partial<PaymentRecord>;
-  const errs = requireFields(payload, ["user", "amount", "direction", "status", "category", "paymentSource", "paymentMethod", "paymentDate"]);
+  const errs = requireFields(payload, ["userId", "amount", "direction", "status", "category", "paymentSource", "paymentMethod", "paymentDate", "utrNumber"]);
   if (errs.length) return validationError(errs);
+  
+  // Check if UTR number is empty or whitespace
+  if (!payload.utrNumber?.trim()) {
+    return validationError(["UTR number is required"]);
+  }
+  
+  initializeMockTransactionIdCounter();
+  mockTransactionIdCounter++;
   
   const newPayment = {
     ...(payload as Record<string, unknown>),
-    id: `TXN-${new Date().getFullYear()}-${String(db.payments.length + 1).padStart(3, "0")}`,
+    transactionId: `TXN-${String(mockTransactionIdCounter).padStart(6, "0")}`,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   } as PaymentRecord;
@@ -1180,7 +1205,7 @@ mockClient.register("POST", "/payments", async ({ body }) => {
 });
 
 mockClient.register("PUT", "/payments/:id", async ({ pathParams, body }) => {
-  const index = db.payments.findIndex((p) => p.id === pathParams.id);
+  const index = db.payments.findIndex((p) => p.transactionId === pathParams.id);
   if (index === -1) return notFoundError(`Payment ${pathParams.id}`);
   const payload = (body || {}) as Partial<PaymentRecord>;
   const now = new Date().toISOString();
@@ -1195,7 +1220,7 @@ mockClient.register("PUT", "/payments/:id", async ({ pathParams, body }) => {
 });
 
 mockClient.register("PATCH", "/payments/:id", async ({ pathParams, body }) => {
-  const index = db.payments.findIndex((p) => p.id === pathParams.id);
+  const index = db.payments.findIndex((p) => p.transactionId === pathParams.id);
   if (index === -1) return notFoundError(`Payment ${pathParams.id}`);
   const payload = (body || {}) as Partial<PaymentRecord>;
   db.payments[index] = { ...db.payments[index], ...payload, updatedAt: new Date().toISOString() };
@@ -1203,7 +1228,7 @@ mockClient.register("PATCH", "/payments/:id", async ({ pathParams, body }) => {
 });
 
 mockClient.register("DELETE", "/payments/:id", async ({ pathParams }) => {
-  const index = db.payments.findIndex((p) => p.id === pathParams.id);
+  const index = db.payments.findIndex((p) => p.transactionId === pathParams.id);
   if (index === -1) return notFoundError(`Payment ${pathParams.id}`);
   db.payments.splice(index, 1);
   return successResponse({ ok: true }, "Payment deleted");
@@ -1215,7 +1240,7 @@ mockClient.register("GET", "/payments/transactions", async ({ queryParams }) => 
   
   // Filter by userId if provided
   if (userId) {
-    payments = payments.filter(p => p.user?.id === userId);
+    payments = payments.filter(p => p.userId === userId);
   }
   
   const { rows, pagination } = applyListQuery(payments, queryParams, {
@@ -1227,7 +1252,7 @@ mockClient.register("GET", "/payments/transactions", async ({ queryParams }) => 
 });
 
 mockClient.register("GET", "/payments/transactions/:id", async ({ pathParams }) => {
-  const payment = db.payments.find((p) => p.id === pathParams.id);
+  const payment = db.payments.find((p) => p.transactionId === pathParams.id);
   if (!payment) return notFoundError(`Transaction ${pathParams.id}`);
   return successResponse(payment, "Transaction retrieved");
 });

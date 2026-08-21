@@ -114,8 +114,8 @@ export function getTransactionColumns(props: TransactionColumnsProps) {
         <input
           type="checkbox"
           className="h-4 w-4 rounded border-border accent-primary"
-          checked={selectedIds.includes(row.id)}
-          onChange={(e) => toggleRowSelection(row.id, e.target.checked)}
+          checked={selectedIds.includes(row.transactionId)}
+          onChange={(e) => toggleRowSelection(row.transactionId, e.target.checked)}
           onClick={(e) => e.stopPropagation()}
         />
       ),
@@ -124,47 +124,35 @@ export function getTransactionColumns(props: TransactionColumnsProps) {
       key: "id",
       label: "ID",
       sortable: true,
-      render: (_: unknown, payment: PaymentRecord) => <span className="font-mono text-sm">{payment.id}</span>,
+      render: (_: unknown, payment: PaymentRecord) => <span className="font-mono text-sm">{payment.transactionId}</span>,
     },
     {
       key: "user",
       label: "User",
       sortable: true,
       render: (_: unknown, payment: PaymentRecord) => {
-        const user = payment.user;
-        if (!user) {
-          return <span className="text-muted-foreground">Unknown User</span>;
-        }
+        const userName = payment.userName || "Unknown User";
+        const userId = payment.userId;
         return (
           <div className="flex items-center gap-3">
-            {user.avatar ? (
-              <img src={user.avatar} alt={user.name} className="h-8 w-8 rounded-full" />
-            ) : user.avatarColor ? (
-              <div className="h-8 w-8 rounded-full flex items-center justify-center" style={{ backgroundColor: user.avatarColor }}>
-                <span className="text-sm font-medium text-white">
-                  {user.name?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            ) : (
-              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                <span className="text-sm font-medium text-muted-foreground">
-                  {user.name?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
+            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+              <span className="text-sm font-medium text-muted-foreground">
+                {userName?.charAt(0).toUpperCase()}
+              </span>
+            </div>
             <div>
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/users/${user.id}`);
+                  navigate(`/users/${userId}`);
                 }}
                 className="font-medium text-primary hover:underline flex items-center gap-1"
               >
-                {user.name}
+                {userName}
                 <User className="h-3.5 w-3.5" />
               </button>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
+              <p className="text-sm text-muted-foreground">{userId}</p>
             </div>
           </div>
         );

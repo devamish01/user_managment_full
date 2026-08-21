@@ -40,7 +40,7 @@ export function EditPaymentDialog({ open, onClose, payment, onSave }: EditPaymen
 
   useEffect(() => {
     if (payment) {
-      setUserId(payment.user.id);
+      setUserId(payment.userId);
       setAmount(payment.amount);
       setDirection(payment.direction);
       setStatus(payment.status);
@@ -56,14 +56,17 @@ export function EditPaymentDialog({ open, onClose, payment, onSave }: EditPaymen
 
   if (!payment) return null;
 
+  const currentPayment = payment; // TypeScript narrowing
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const selectedUser = mockUsers.find((u) => u.id === userId) || payment!.user;
+    const selectedUser = mockUsers.find((u) => u.id === userId);
+    const selectedUserName = selectedUser?.name || currentPayment.userName || "Unknown User";
     const numAmount = typeof amount === "string" ? parseFloat(amount) || 0 : amount;
-    const oldAmount = payment!.amount;
-    const oldStatus = payment!.status;
+    const oldAmount = currentPayment.amount;
+    const oldStatus = currentPayment.status;
 
-    const timelineEntries = [...(payment!.timeline || [])] as PaymentTimelineEntry[];
+    const timelineEntries = [...(currentPayment.timeline || [])] as PaymentTimelineEntry[];
     if (numAmount !== oldAmount) {
       timelineEntries.push({
         label: "Amount Updated",
@@ -91,8 +94,9 @@ export function EditPaymentDialog({ open, onClose, payment, onSave }: EditPaymen
     });
 
     const updatedRecord: PaymentRecord = {
-      ...payment!,
-      user: selectedUser,
+      ...currentPayment,
+      userId: selectedUser?.id || currentPayment.userId,
+      userName: selectedUserName,
       amount: numAmount,
       direction,
       status,
@@ -100,9 +104,10 @@ export function EditPaymentDialog({ open, onClose, payment, onSave }: EditPaymen
       paymentMethod,
       paymentSource,
       utrNumber: utrNumber.trim() || "—",
-      paymentDate: paymentDate ? `${paymentDate}T00:00:00Z` : payment!.paymentDate,
+      paymentDate: paymentDate ? `${paymentDate}T00:00:00Z` : currentPayment.paymentDate,
       notes,
       timeline: timelineEntries,
+      transactionId: currentPayment.transactionId,
     };
 
     if (onSave) {
@@ -115,7 +120,7 @@ export function EditPaymentDialog({ open, onClose, payment, onSave }: EditPaymen
     <SharedModal
       open={open}
       onClose={onClose}
-      title={`Edit Payment (${payment.id})`}
+      title={`Edit Payment (${payment.transactionId})`}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">

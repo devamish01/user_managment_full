@@ -13,6 +13,8 @@ export const buildResponse = <T>(
   message: string,
   meta: ApiResponseMeta = {},
   errors: ApiError[] | null = null,
+  errorCode?: string,
+  fields?: Record<string, string[]>,
 ): ApiResponse<T> => ({
   success,
   status,
@@ -20,6 +22,8 @@ export const buildResponse = <T>(
   data,
   meta,
   errors,
+  errorCode,
+  fields,
 });
 
 export const successResponse = <T>(
@@ -65,6 +69,32 @@ export const validationError = (errors: ApiError[]): ApiResponse<null> =>
 
 export const singleValidationError = (field: string, message: string): ApiResponse<null> =>
   validationError([{ code: "VALIDATION_ERROR", field, message }]);
+
+/**
+ * Creates a validation error response with the new `fields` format
+ * { fieldName: ["error message 1", "error message 2"] }
+ * This is the preferred format for backend validation errors.
+ */
+export const validationErrorWithFields = (
+  fields: Record<string, string[]>,
+  message: string = "Validation failed"
+): ApiResponse<null> => {
+  const errors: ApiError[] = [];
+  Object.entries(fields).forEach(([field, messages]) => {
+    messages.forEach((msg) => {
+      errors.push({ code: "VALIDATION_ERROR", field, message: msg });
+    });
+  });
+  return buildResponse(false, 422, null, message, {}, errors, "VALIDATION_ERROR", fields);
+};
+
+/**
+ * Creates a single field validation error with the new `fields` format
+ */
+export const singleValidationErrorWithFields = (
+  field: string,
+  message: string
+): ApiResponse<null> => validationErrorWithFields({ [field]: [message] });
 
 export const serverError = (message: string = "Internal server error"): ApiResponse<null> =>
   errorResponse(500, [{ code: "SERVER_ERROR", message }], message);

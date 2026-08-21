@@ -28,27 +28,40 @@ export const login = async (
     email: data.email,
   }).select("+password");
 
-  if (!user) {
-    throw new AppError({
-      message: AUTH_MESSAGES.INVALID_CREDENTIALS,
-      statusCode: HTTP_STATUS.UNAUTHORIZED,
-      errorCode: "INVALID_CREDENTIALS",
-    });
-  }
-
+  // if (!user) {
+  //   throw new AppError({
+  //     message: AUTH_MESSAGES.INVALID_CREDENTIALS,
+  //     statusCode: HTTP_STATUS.UNAUTHORIZED,
+  //     errorCode: "INVALID_CREDENTIALS",
+  //   });
+  // }
+if (!user) {
+  throw new AppError({
+    message: AUTH_MESSAGES.INVALID_EMAIL,
+    statusCode: HTTP_STATUS.UNAUTHORIZED,
+    errorCode: "INVALID_EMAIL",
+  });
+}
   // Compare Password
   const isPasswordValid = await comparePassword(
     data.password,
     user.password,
   );
 
+  // if (!isPasswordValid) {
+  //   throw new AppError({
+  //     message: AUTH_MESSAGES.INVALID_CREDENTIALS,
+  //     statusCode: HTTP_STATUS.UNAUTHORIZED,
+  //     errorCode: "INVALID_CREDENTIALS",
+  //   });
+  // }
   if (!isPasswordValid) {
-    throw new AppError({
-      message: AUTH_MESSAGES.INVALID_CREDENTIALS,
-      statusCode: HTTP_STATUS.UNAUTHORIZED,
-      errorCode: "INVALID_CREDENTIALS",
-    });
-  }
+  throw new AppError({
+    message: AUTH_MESSAGES.INVALID_PASSWORD,
+    statusCode: HTTP_STATUS.UNAUTHORIZED,
+    errorCode: "INVALID_PASSWORD",
+  });
+}
 
   // User Status Check
   if (user.status === "pending") {

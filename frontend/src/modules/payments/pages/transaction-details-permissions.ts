@@ -13,11 +13,9 @@ export const useTransactionDetailsPermissions = () => {
   // Section visibility
   const viewInfoSection = hasPermission("transactions.sec_info");
   const viewUserSection = hasPermission("transactions.sec_user");
-  const viewPaymentSection = hasPermission("transactions.sec_payment");
   const viewAttachmentSection = hasPermission("transactions.sec_attachment");
   const viewNotesSection = hasPermission("transactions.sec_notes");
   const viewVerificationSection = hasPermission("transactions.sec_verification");
-  const viewLinkedSection = hasPermission("transactions.sec_linked");
   const viewTimelineSection = hasPermission("transactions.sec_timeline");
   // const viewHistorySection = hasPermission("transactions.sec_history");
 
@@ -44,11 +42,9 @@ export const useTransactionDetailsPermissions = () => {
     // Sections
     viewInfoSection,
     viewUserSection,
-    viewPaymentSection,
     viewAttachmentSection,
     viewNotesSection,
     viewVerificationSection,
-    viewLinkedSection,
     viewTimelineSection,
     // viewHistorySection,
     // Amount

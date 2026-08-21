@@ -6,7 +6,6 @@ import { formatZodError } from "@/shared/errors/zod-error.js";
 import { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 
-
 export const errorMiddleware = (
   error: Error,
   req: Request,
@@ -14,40 +13,37 @@ export const errorMiddleware = (
   _next: NextFunction,
 ): Response => {
 
-
   // Zod Validation Error
 
   if (error instanceof ZodError) {
 
-
     const fields = formatZodError(error);
-
 
     logger.warn({
 
-      message:"Validation failed",
+      message: "Validation failed",
 
-      errorCode:"VALIDATION_ERROR",
+      errorCode: "VALIDATION_ERROR",
 
       fields,
 
-      method:req.method,
+      method: req.method,
 
-      path:req.path,
+      path: req.path,
 
     });
-
-
 
     return res.status(
       HTTP_STATUS.BAD_REQUEST
     ).json({
 
-      success:false,
+      success: false,
 
-      message:"Validation failed",
+      status: HTTP_STATUS.BAD_REQUEST,
 
-      errorCode:"VALIDATION_ERROR",
+      message: "Validation failed",
+
+      errorCode: "VALIDATION_ERROR",
 
       fields,
 
@@ -56,66 +52,64 @@ export const errorMiddleware = (
   }
 
 
-
   // Business Error
 
-  if(error instanceof AppError){
-
+  if (error instanceof AppError) {
 
     logger.warn({
 
-      message:error.message,
+      message: error.message,
 
-      errorCode:error.errorCode,
+      errorCode: error.errorCode,
 
-      method:req.method,
+      method: req.method,
 
-      path:req.path,
+      path: req.path,
 
     });
-
 
     return res.status(
       error.statusCode
     ).json({
 
-      success:false,
+      success: false,
 
-      message:error.message,
+      status: error.statusCode,
 
-      errorCode:error.errorCode,
+      message: error.message,
+
+      errorCode: error.errorCode,
 
     });
 
   }
-
 
 
   // Unknown Error
 
   logger.error({
 
-    message:error.message,
+    message: error.message,
 
-    stack:error.stack,
+    stack: error.stack,
 
-    method:req.method,
+    method: req.method,
 
-    path:req.path,
+    path: req.path,
 
   });
-
-
 
   return res.status(
     HTTP_STATUS.INTERNAL_SERVER_ERROR
   ).json({
 
-    success:false,
+    success: false,
 
-    message:"Internal server error.",
+    status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
 
-    errorCode:"INTERNAL_SERVER_ERROR",
+    message: "Internal server error.",
+
+    errorCode: "INTERNAL_SERVER_ERROR",
 
   });
 

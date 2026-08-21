@@ -12,4 +12,6 @@ export const AUTH_MESSAGES = {
 
   TOKEN_GENERATED: "Token generated successfully.",
   INVALID_CREDENTIALS: "Invalid email or password.",
+  INVALID_EMAIL: "Invalid email.",
+  INVALID_PASSWORD: "Invalid password.",
 } as const;

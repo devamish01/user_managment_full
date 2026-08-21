@@ -8,7 +8,7 @@ import { SharedSelect } from "@/shared/components/SharedSelect";
 
 import type { PaymentStatus, PaymentDirection, PaymentCategory } from "../../types";
 
-type TransactionFilterStatus = PaymentStatus | "all" | "pending" | "credit" | "debit";
+type TransactionFilterStatus = PaymentStatus | "all" | "pending" | "completed" | "rejected" | "refunded" | "credit" | "debit";
 
 export interface TransactionFiltersProps {
   search: string;

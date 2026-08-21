@@ -9,6 +9,7 @@ import {
   User,
   Shield,
   Key,
+  ShieldCheck,
 
   Palette,
   Eye,
@@ -31,12 +32,13 @@ import {
   Textarea,
 } from "@/components/ui";
 import { useTheme, useStore, isSuperAdmin } from "@/store";
-import { useToast } from "@/components/ui/toast";
+import { useToastError } from "@/core/api/toastUtils";
 import { useUsersStore } from "@/modules/users";
+import { SharedButton, SharedBadge } from "@/shared/components";
 
 export const Settings = () => {
   const { theme, toggle } = useTheme();
-  const { toast } = useToast();
+  const { toastError, toastSuccess } = useToastError();
   const {
     currentRoleId,
     currentUser,
@@ -88,38 +90,83 @@ export const Settings = () => {
     show: false,
   });
 
+  // Reset Password Form State (inline, using existing Input components)
+  const [resetPwForm, setResetPwForm] = React.useState({
+    newPassword: "",
+    confirmPassword: "",
+    show: false,
+    errors: {} as Record<string, string>,
+  });
+  const [resetLoading, setResetLoading] = React.useState(false);
 
+  const validateResetForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (!resetPwForm.newPassword) {
+      newErrors.newPassword = "Password is required";
+    } else if (resetPwForm.newPassword.length < 8) {
+      newErrors.newPassword = "Password must be at least 8 characters";
+    } else if (!/[A-Z]/.test(resetPwForm.newPassword)) {
+      newErrors.newPassword = "Password must contain at least one uppercase letter";
+    } else if (!/[a-z]/.test(resetPwForm.newPassword)) {
+      newErrors.newPassword = "Password must contain at least one lowercase letter";
+    } else if (!/[0-9]/.test(resetPwForm.newPassword)) {
+      newErrors.newPassword = "Password must contain at least one number";
+    } else if (!/[^A-Za-z0-9]/.test(resetPwForm.newPassword)) {
+      newErrors.newPassword = "Password must contain at least one special character";
+    }
 
-  const save = (msg = "Settings saved") => toast({ type: "success", title: msg });
+    if (!resetPwForm.confirmPassword) {
+      newErrors.confirmPassword = "Confirm password is required";
+    } else if (resetPwForm.newPassword !== resetPwForm.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setResetPwForm(prev => ({ ...prev, errors: newErrors }));
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleResetPassword = async () => {
+    if (!currentUser || !validateResetForm()) return;
+
+    setResetLoading(true);
+    try {
+      const res = await useUsersStore.getState().resetUserPassword(currentUser.id, resetPwForm.newPassword, resetPwForm.confirmPassword);
+      toastSuccess(res);
+      setResetPwForm({ newPassword: "", confirmPassword: "", show: false, errors: {} });
+    } catch (error) {
+      toastError(error, { title: "Reset failed" });
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const save = (msg = "Settings saved") => toastSuccess({ success: true, message: msg });
 
   const changePassword = () => {
     if (!superAdmin) {
-      toast({
-        type: "error",
-        title: "Not allowed",
-        description: "Only the Super Admin can change passwords. Contact them for assistance.",
-      });
+      toastError({ message: "Only the Super Admin can change passwords. Contact them for assistance." }, { title: "Not allowed" });
       return;
     }
     if (!pwForm.current || !pwForm.next || !pwForm.confirm) {
-      toast({ type: "error", title: "All fields are required" });
+      toastError({ message: "All fields are required" }, { title: "Error" });
       return;
     }
     if (pwForm.current !== superAdminPassword) {
-      toast({ type: "error", title: "Current password is incorrect" });
+      toastError({ message: "Current password is incorrect" }, { title: "Error" });
       return;
     }
     if (pwForm.next.length < 8) {
-      toast({ type: "error", title: "Password too short", description: "At least 8 characters." });
+      toastError({ message: "At least 8 characters." }, { title: "Password too short" });
       return;
     }
     if (pwForm.next !== pwForm.confirm) {
-      toast({ type: "error", title: "Passwords do not match" });
+      toastError({ message: "Passwords do not match" }, { title: "Error" });
       return;
     }
     setSuperAdminPassword(pwForm.next);
     addLog({ userId: users[0]?.id || "u", action: "Changed super-admin password", target: "Account", type: "update" });
-    toast({ type: "success", title: "Password updated", description: "Your Super Admin password has been changed." });
+    toastSuccess({ success: true, message: "Your Super Admin password has been changed." });
     setPwForm({ current: "", next: "", confirm: "", show: false });
   };
 
@@ -378,14 +425,104 @@ export const Settings = () => {
             </CardContent>
           </Card>
 
-   
+          {/* Security & Privacy - Available to all users */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield size={16} /> Security & Privacy
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Manage your security settings and privacy preferences.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck size={18} className="text-emerald-500" />
+                    <div>
+                      <p className="text-sm font-medium">Two-Factor Authentication</p>
+                      <p className="text-xs text-muted-foreground">Enabled via Authenticator</p>
+                    </div>
+                  </div>
+                  <SharedBadge variant="success">Active</SharedBadge>
+                </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Lock size={18} className="text-blue-500" />
+                    <div>
+                      <p className="text-sm font-medium">Last Login</p>
+                      <p className="text-xs text-muted-foreground">{currentUser.lastActive ? new Date(currentUser.lastActive).toLocaleString() : "—"}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Key size={18} className="text-orange-500" />
+                    <div>
+                      <p className="text-sm font-medium">Reset Password</p>
+                      <p className="text-xs text-muted-foreground">Generate a new password for your account</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reset Password Form - Inline */}
+              <div className="pt-4 border-t border-border">
+                <h4 className="text-sm font-medium mb-3">Reset Your Password</h4>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label>New Password *</Label>
+                    <div className="relative">
+                      <Input
+                        type={resetPwForm.show ? "text" : "password"}
+                        placeholder="Enter new password"
+                        value={resetPwForm.newPassword}
+                        onChange={(e) => setResetPwForm({ ...resetPwForm, newPassword: e.target.value })}
+                        disabled={resetLoading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setResetPwForm(prev => ({ ...prev, show: !prev.show }))}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        disabled={resetLoading}
+                      >
+                        {resetPwForm.show ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                    {resetPwForm.errors.newPassword && <p className="text-xs text-destructive">{resetPwForm.errors.newPassword}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Confirm Password *</Label>
+                    <Input
+                      type={resetPwForm.show ? "text" : "password"}
+                      placeholder="Confirm new password"
+                      value={resetPwForm.confirmPassword}
+                      onChange={(e) => setResetPwForm({ ...resetPwForm, confirmPassword: e.target.value })}
+                      disabled={resetLoading}
+                    />
+                    {resetPwForm.errors.confirmPassword && <p className="text-xs text-destructive">{resetPwForm.errors.confirmPassword}</p>}
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>Password requirements:</p>
+                    <ul className="list-disc list-inside space-y-0.5">
+                      <li>At least 8 characters</li>
+                      <li>At least one uppercase letter</li>
+                      <li>At least one lowercase letter</li>
+                      <li>At least one number</li>
+                      <li>At least one special character</li>
+                    </ul>
+                  </div>
+                  <Button onClick={handleResetPassword} disabled={resetLoading}>
+                    {resetLoading ? "Resetting..." : "Reset Password"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
         </div>
       )}
-
-  
- 
-  
-
 
     </div>
   );

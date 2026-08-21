@@ -52,7 +52,8 @@ export class UserApi {
   static resetUserPassword(
     id: string,
     password: string,
+    confirmPassword?: string,
   ): Promise<ApiResponse<{ ok: boolean }>> {
-    return api.post<{ ok: boolean }>(`${USER_DETAILS(id)}/reset-password`, { password });
+    return api.post<{ ok: boolean }>(`${USER_DETAILS(id)}/reset-password`, { password, confirmPassword });
   }
 }

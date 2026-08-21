@@ -9,6 +9,8 @@
  *   core/auth/token.
  * - Network / HTTP errors are normalised into our `ApiResponse<T>` envelope
  *   so downstream services see the same shape regardless of client.
+ * - **Preserves full backend response** including message, errorCode, fields
+ *   so errorUtils can extract the most useful information.
  */
 
 import axios, { AxiosError, type AxiosInstance } from "axios";
@@ -38,20 +40,32 @@ export const axiosClient = {
     url: string,
     body?: unknown,
   ): Promise<ApiResponse<T>> {
-    console.log("axiosClient.request - method:", method, "url:", url, "body:", body);
     try {
       const response = await instance.request<ApiResponse<T>>({
         method,
         url,
         data: body,
       });
-      // Backend is expected to already speak our ApiResponse<T> envelope.
+
       return response.data;
     } catch (err) {
       const e = err as AxiosError<ApiResponse<T>>;
-      if (e.response?.data) return e.response.data;
+
+      // Backend ne proper error response diya hai - throw the actual response data
+      // so errorUtils can extract the backend message, errorCode, fields
+      if (e.response?.data) {
+        throw e.response.data;
+      }
+
+      // Network / unknown error
       const status = (e.response?.status ?? 500) as ApiResponse<T>["status"];
-      return buildResponse<T>(false, status, null, e.message || "Network error");
+
+      throw buildResponse<T>(
+        false,
+        status,
+        null,
+        e.message || "Network error"
+      );
     }
   },
 };

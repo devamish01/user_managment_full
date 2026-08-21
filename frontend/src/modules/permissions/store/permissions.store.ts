@@ -5,6 +5,8 @@ import * as React from "react";
 import type { Permission } from "@/lib/types";
 import { PermissionService } from "../services";
 import type { GenericQueryParams } from "@/api";
+import { getErrorMessage } from "@/core/api/errorUtils";
+import type { ApiResponse } from "@/core/api/types";
 
 export interface UsePermissionsStoreOptions {
   onRolesRefresh?: () => Promise<void>;
@@ -15,9 +17,9 @@ export interface PermissionsStoreState {
   loading: boolean;
   error: string | null;
   getPermissions: (params?: GenericQueryParams) => Promise<void>;
-  createPermission: (data: Omit<Permission, "id">) => Promise<void>;
-  updatePermission: (id: string, data: Partial<Permission>) => Promise<void>;
-  deletePermission: (id: string) => Promise<void>;
+  createPermission: (data: Omit<Permission, "id">) => Promise<ApiResponse<Permission>>;
+  updatePermission: (id: string, data: Partial<Permission>) => Promise<ApiResponse<Permission>>;
+  deletePermission: (id: string) => Promise<ApiResponse<{ ok: boolean }>>;
 }
 
 export const usePermissionsStore = (
@@ -35,7 +37,7 @@ export const usePermissionsStore = (
       if (res.success && res.data) setPermissions(res.data);
       else setError(res.message || "Failed to load permissions");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load permissions");
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -50,10 +52,14 @@ export const usePermissionsStore = (
 
   const createPermission = React.useCallback(
     async (data: Omit<Permission, "id">) => {
-      console.log("permissions.store createPermission - data:", data);
       const res = await PermissionService.createPermission(data);
-      if (res.success) await refresh();
-      else throw new Error(res.message);
+
+      if (res.success) {
+        await refresh();
+        return res;
+      }
+
+      throw res;
     },
     [refresh],
   );
@@ -61,8 +67,13 @@ export const usePermissionsStore = (
   const updatePermission = React.useCallback(
     async (id: string, data: Partial<Permission>) => {
       const res = await PermissionService.updatePermission(id, data);
-      if (res.success) await refresh();
-      else throw new Error(res.message);
+
+      if (res.success) {
+        await refresh();
+        return res;
+      }
+
+      throw res;
     },
     [refresh],
   );
@@ -70,14 +81,21 @@ export const usePermissionsStore = (
   const deletePermission = React.useCallback(
     async (id: string) => {
       const res = await PermissionService.deletePermission(id);
+
       if (res.success) {
         await refresh();
-        if (options.onRolesRefresh) await options.onRolesRefresh();
-      } else throw new Error(res.message);
+
+        if (options.onRolesRefresh) {
+          await options.onRolesRefresh();
+        }
+
+        return res;
+      }
+
+      throw res;
     },
     [refresh, options.onRolesRefresh],
   );
-
   return { permissions, loading, error, getPermissions, createPermission, updatePermission, deletePermission };
 };
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { SharedModal } from "@/shared/components";
 import { SharedButton, SharedInput } from "@/shared/components";
-import { useToast } from "@/components/ui/toast";
+import { useToastError } from "@/core/api/toastUtils";
 import { UserService } from "@/modules/users/services";
 import type { User } from "@/lib/types";
 
@@ -16,7 +16,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   user,
   onClose,
 }) => {
-  const { toast } = useToast();
+  const { toastError, toastSuccess } = useToastError();
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -50,15 +50,20 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!user || !validateForm()) return;
+    if (!user) return;
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
-      await UserService.resetUserPassword(user.id, password);
-      toast({ type: "success", title: "Password reset successfully" });
+      const response = await UserService.resetUserPassword(user.id, password, confirmPassword);
+      toastSuccess(response);
       onClose();
     } catch (error: any) {
-      toast({ type: "error", title: "Reset failed", description: error.message });
+      const fieldErrors = toastError(error, { title: "Reset failed" });
+      // Set field errors for form validation display
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors(fieldErrors);
+      }
     } finally {
       setLoading(false);
     }

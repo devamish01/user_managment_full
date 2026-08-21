@@ -11,7 +11,7 @@ import {
   Tabs,
 } from "@/components/ui";
 import { SharedButton, SharedInput, SharedModal, SharedSearch, ErrorState } from "@/shared/components";
-import { useToast } from "@/components/ui/toast";
+import { useToastError } from "@/core/api/toastUtils";
 import usePermissionsStore from "../store/permissions.store";
 import { PermissionsSkeleton } from "./PermissionsSkeleton";
 import type { Permission } from "@/lib/types";
@@ -91,8 +91,8 @@ const ModuleCard = ({ moduleName, perms, uiPerms, onEdit, onDelete }: any) => {
 
 export const Permissions = () => {
   const { permissions, loading, error, getPermissions, createPermission, updatePermission, deletePermission } = usePermissionsStore();
-  const { toast } = useToast();
-  const [editing, setEditing] = React.useState<Permission | null>(null);
+  const { toastError, toastSuccess } = useToastError();
+  const [editing, setEditing] = React.useState<Partial<Permission> | null>(null);
   const [creating, setCreating] = React.useState(false);
   const [deletePerm, setDeletePerm] = React.useState<Permission | null>(null);
   const [search, setSearch] = React.useState("");
@@ -106,24 +106,24 @@ export const Permissions = () => {
     try {
       // Client-side validation for key format (lowercase letters and dots only)
       if (creating && editing.key && !/^[a-z.]+$/.test(editing.key)) {
-        toast({ type: "error", title: "Invalid Key", description: "Key must contain only lowercase letters and dots (e.g. users.create)" });
+        toastError({ message: "Key must contain only lowercase letters and dots (e.g. users.create)" }, { title: "Invalid Key" });
         return;
       }
       // Don't send key when updating (key cannot be edited)
       // Don't send id when creating (backend generates it)
       const data = creating
-        ? { name: editing.name, key: editing.key, module: editing.module, description: editing.description }
-        : { ...editing, key: undefined, id: undefined };
+        ? { name: editing.name!, key: editing.key!, module: editing.module!, description: editing.description! }
+        : { name: editing.name!, module: editing.module!, description: editing.description!, key: editing.key! };
       console.log("Permissions.tsx save - creating:", creating, "data:", data);
-      if (creating) { await createPermission(data); toast({ type: "success", title: "Permission created" }); }
-      else { await updatePermission(editing.id, data); toast({ type: "success", title: "Permission updated" }); }
+      if (creating) { const res = await createPermission(data); toastSuccess(res); }
+      else { const res = await updatePermission(editing.id!, data); toastSuccess(res); }
       setEditing(null); setCreating(false);
-    } catch (e: any) { toast({ type: "error", title: "Error", description: e.message }); }
+    } catch (e: any) { toastError(e, { title: "Error" }); }
   };
 
   const confirmDelete = async () => {
-    try { await deletePermission(deletePerm!.id); toast({ type: "success", title: "Permission deleted" }); setDeletePerm(null); }
-    catch (e: any) { toast({ type: "error", title: "Cannot Delete", description: e.message }); }
+    try { const res = await deletePermission(deletePerm!.id); toastSuccess(res); setDeletePerm(null); }
+    catch (e: any) { toastError(e, { title: "Cannot Delete" }); }
   };
 
   const grouped = permissions.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase())).reduce((acc: any, p) => {
@@ -176,7 +176,7 @@ export const Permissions = () => {
               This permission is assigned to {deletePerm.assignedRolesCount} role{deletePerm.assignedRolesCount !== 1 ? "s" : ""}. It cannot be deleted until removed from all roles.
             </p>
           )}
-          <div className="flex justify-center gap-2"><SharedButton variant="outline" onClick={() => setDeletePerm(null)}>Cancel</SharedButton><SharedButton variant="destructive" onClick={confirmDelete} disabled={deletePerm && deletePerm.assignedRolesCount && deletePerm.assignedRolesCount > 0}>Delete</SharedButton></div>
+          <div className="flex justify-center gap-2"><SharedButton variant="outline" onClick={() => setDeletePerm(null)}>Cancel</SharedButton><SharedButton variant="destructive" onClick={confirmDelete} disabled={!!(deletePerm && deletePerm.assignedRolesCount && deletePerm.assignedRolesCount > 0)}>Delete</SharedButton></div>
         </div>
       </SharedModal>
     </div>

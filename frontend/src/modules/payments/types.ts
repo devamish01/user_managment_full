@@ -9,20 +9,17 @@ export type PaymentCategory = "Donation" | "Giveaway" | "Event" | "Charity" | "M
 export type PaymentSource = "ADMIN_ADDED" | "USER_PAYMENT" | "GATEWAY" | "SYSTEM";
 export type PaymentMethod = "PhonePe" | "Google Pay" | "UPI" | "Bank Transfer" | "Cash" | "Other";
 
-export interface PaymentUser {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  avatar?: string;
-  avatarColor?: string;
-}
-
 export interface PaymentCreatedByInfo {
   id?: string;
   name: string;
   role: string;
 
+}
+
+export interface PaymentTimelineChange {
+  field: string;
+  oldValue: string;
+  newValue: string;
 }
 
 export interface PaymentTimelineEntry {
@@ -31,18 +28,21 @@ export interface PaymentTimelineEntry {
   actor?: string;
   actorRole?: string;
   description?: string;
-  // Correction/audit fields
+  // Legacy fields for backward compatibility
   field?: string;
   oldValue?: string;
   newValue?: string;
   reason?: string;
+  // New grouped changes format
+  changes?: PaymentTimelineChange[];
 }
 
 
 
 export interface PaymentRecord {
-  id: string;
-  user: PaymentUser;
+  transactionId: string;
+  userId: string;
+  userName: string;
   amount: number;
   direction: PaymentDirection;
   status: PaymentStatus;
@@ -59,10 +59,6 @@ export interface PaymentRecord {
   verifiedBy?: string | null;
   verifiedAt?: string | null;
   verificationNotes?: string | null;
-  referenceModule?: string | null;
-  referenceId?: string | null;
-  gatewayTransactionId?: string | null;
-  gatewayOrderId?: string | null;
   timeline?: PaymentTimelineEntry[];
   // Audit fields
   isModified?: boolean;

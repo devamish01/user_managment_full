@@ -6,8 +6,9 @@
  */
 
 import * as React from "react";
-import type { PaymentRecord } from "../types";
+import type { PaymentRecord, PaymentTimelineEntry } from "../types";
 import { PaymentApi } from "../api";
+import { getErrorMessage } from "@/core/api/errorUtils";
 
 export interface PaymentsStoreState {
   payments: PaymentRecord[];
@@ -15,12 +16,13 @@ export interface PaymentsStoreState {
   error: string | null;
   getPayments: (userId?: string) => Promise<void>;
   getPaymentsByUserId: (userId: string) => Promise<PaymentRecord[]>;
-  getPaymentById: (id: string) => Promise<PaymentRecord | null>;
+  getTransactions: () => Promise<void>;
+  getPaymentById: (transactionId: string) => Promise<PaymentRecord | null>;
   createPayment: (data: Partial<PaymentRecord>) => Promise<PaymentRecord | null>;
-  updatePayment: (id: string, data: Partial<PaymentRecord>, correctionReason?: string) => Promise<PaymentRecord | null>;
-  deletePayment: (id: string) => Promise<boolean>;
-  approvePayment: (id: string, verifiedBy: string, verificationNotes?: string) => Promise<PaymentRecord | null>;
-  rejectPayment: (id: string, verifiedBy: string, verificationNotes?: string) => Promise<PaymentRecord | null>;
+  updatePayment: (transactionId: string, data: Partial<PaymentRecord>, correctionReason?: string) => Promise<PaymentRecord | null>;
+  deletePayment: (transactionId: string) => Promise<boolean>;
+  approvePayment: (transactionId: string, verifiedBy: string, verificationNotes?: string) => Promise<PaymentRecord | null>;
+  rejectPayment: (transactionId: string, verifiedBy: string, verificationNotes?: string) => Promise<PaymentRecord | null>;
   // getTransactionHistory: (id: string, params?: { page?: number; limit?: number; search?: string; filter?: string; sort?: string }) => Promise<{ data: ChangeHistoryEntry[]; pagination?: { page: number; limit: number; total: number; totalPages: number } }>;
 }
 
@@ -42,7 +44,7 @@ export const usePaymentsStore = (): PaymentsStoreState => {
       }
     } catch (err) {
       console.error('Error fetching payments:', err);
-      setError(err instanceof Error ? err.message : "Failed to load payments");
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -62,8 +64,27 @@ export const usePaymentsStore = (): PaymentsStoreState => {
       }
     } catch (err) {
       console.error('Error fetching payments:', err);
-      setError(err instanceof Error ? err.message : "Failed to load payments");
+      setError(getErrorMessage(err));
       return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getTransactions = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await PaymentApi.getTransactions();
+      if (res.success && res.data) {
+        setPayments(res.data);
+      } else {
+        console.error('Failed to load transactions:', res.message);
+        setError(res.message || "Failed to load transactions");
+      }
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -82,58 +103,58 @@ export const usePaymentsStore = (): PaymentsStoreState => {
         return null;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create payment");
+      setError(getErrorMessage(err));
       return null;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const updatePayment = React.useCallback(async (id: string, data: Partial<PaymentRecord>, correctionReason?: string) => {
+  const updatePayment = React.useCallback(async (transactionId: string, data: Partial<PaymentRecord>, correctionReason?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await PaymentApi.updatePayment(id, data, correctionReason);
+      const res = await PaymentApi.updatePayment(transactionId, data, correctionReason);
       if (res.success && res.data) {
-        setPayments((prev) => prev.map((p) => (p.id === id ? res.data! : p)));
+        setPayments((prev) => prev.map((p) => (p.transactionId === transactionId ? res.data! : p)));
         return res.data;
       } else {
         setError(res.message || "Failed to update payment");
         return null;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update payment");
+      setError(getErrorMessage(err));
       return null;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const deletePayment = React.useCallback(async (id: string) => {
+  const deletePayment = React.useCallback(async (transactionId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await PaymentApi.deletePayment(id);
+      const res = await PaymentApi.deletePayment(transactionId);
       if (res.success) {
-        setPayments((prev) => prev.filter((p) => p.id !== id));
+        setPayments((prev) => prev.filter((p) => p.transactionId !== transactionId));
         return true;
       } else {
         setError(res.message || "Failed to delete payment");
         return false;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete payment");
+      setError(getErrorMessage(err));
       return false;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const getPaymentById = React.useCallback(async (id: string) => {
+  const getPaymentById = React.useCallback(async (transactionId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await PaymentApi.getTransaction(id);
+      const res = await PaymentApi.getTransaction(transactionId);
       if (res.success && res.data) {
         return res.data;
       } else {
@@ -148,55 +169,85 @@ export const usePaymentsStore = (): PaymentsStoreState => {
     }
   }, []);
 
-  const approvePayment = React.useCallback(async (id: string, verifiedBy: string, verificationNotes?: string) => {
+  const approvePayment = React.useCallback(async (transactionId: string, verifiedBy: string, verificationNotes?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await PaymentApi.updatePayment(id, {
+      // First get the current payment to access its timeline
+      const currentPayment = payments.find(p => p.transactionId === transactionId);
+      const timelineEntries = [...(currentPayment?.timeline || [])] as PaymentTimelineEntry[];
+      const now = new Date().toISOString();
+      
+      // Add timeline entry for verification approval
+      timelineEntries.push({
+        label: "Verification Approved",
+        timestamp: now,
+        actor: verifiedBy,
+        actorRole: "Finance",
+        description: `Verification approved${verificationNotes ? `: ${verificationNotes}` : ""}`,
+      });
+
+      const res = await PaymentApi.updatePayment(transactionId, {
         status: "Completed",
         verifiedBy,
-        verifiedAt: new Date().toISOString(),
+        verifiedAt: now,
         verificationNotes,
+        timeline: timelineEntries,
       });
       if (res.success && res.data) {
-        setPayments((prev) => prev.map((p) => (p.id === id ? res.data! : p)));
+        setPayments((prev) => prev.map((p) => (p.transactionId === transactionId ? res.data! : p)));
         return res.data;
       } else {
         setError(res.message || "Failed to approve payment");
         return null;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to approve payment");
+      setError(getErrorMessage(err));
       return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [payments]);
 
-  const rejectPayment = React.useCallback(async (id: string, verifiedBy: string, verificationNotes?: string) => {
+  const rejectPayment = React.useCallback(async (transactionId: string, verifiedBy: string, verificationNotes?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await PaymentApi.updatePayment(id, {
+      // First get the current payment to access its timeline
+      const currentPayment = payments.find(p => p.transactionId === transactionId);
+      const timelineEntries = [...(currentPayment?.timeline || [])] as PaymentTimelineEntry[];
+      const now = new Date().toISOString();
+      
+      // Add timeline entry for verification rejection
+      timelineEntries.push({
+        label: "Verification Rejected",
+        timestamp: now,
+        actor: verifiedBy,
+        actorRole: "Finance",
+        description: `Verification rejected${verificationNotes ? `: ${verificationNotes}` : ""}`,
+      });
+
+      const res = await PaymentApi.updatePayment(transactionId, {
         status: "Rejected",
         verifiedBy,
-        verifiedAt: new Date().toISOString(),
+        verifiedAt: now,
         verificationNotes,
+        timeline: timelineEntries,
       });
       if (res.success && res.data) {
-        setPayments((prev) => prev.map((p) => (p.id === id ? res.data! : p)));
+        setPayments((prev) => prev.map((p) => (p.transactionId === transactionId ? res.data! : p)));
         return res.data;
       } else {
         setError(res.message || "Failed to reject payment");
         return null;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reject payment");
+      setError(getErrorMessage(err));
       return null;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [payments]);
 
   // const getTransactionHistory = React.useCallback(async (id: string, params?: { page?: number; limit?: number; search?: string; filter?: string; sort?: string }) => {
   //   setLoading(true);
@@ -237,7 +288,20 @@ export const usePaymentsStore = (): PaymentsStoreState => {
   //   }
   // }, []);
 
-  return { payments, loading, error, getPayments, getPaymentById, createPayment, updatePayment, deletePayment, approvePayment, rejectPayment, getPaymentsByUserId };
+  return { 
+    payments, 
+    loading, 
+    error, 
+    getPayments, 
+    getTransactions,
+    getPaymentById, 
+    createPayment, 
+    updatePayment, 
+    deletePayment, 
+    approvePayment, 
+    rejectPayment, 
+    getPaymentsByUserId,
+  };
 };
 
 export default usePaymentsStore;

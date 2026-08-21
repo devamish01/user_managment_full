@@ -80,13 +80,13 @@ export const seedRoles = async (): Promise<void> => {
       // Admin gets most permissions except system-level ones
       const adminPermissionKeys = [
         // Sidebar Navigation
-        "pages.dashboard", "pages.users", "pages.permissions", "pages.assignment", "pages.logs", "pages.settings",
+        "pages.dashboard", "pages.users", "pages.permissions", "pages.assignment", "pages.logs", "pages.settings", "pages.payments", "pages.transactions", "pages.transactions.details",
         // User Management
         "users.create", "users.update", "users.delete", "users.export", "users.view_full_email",
         // User Management UI
         "users.col_name", "users.col_email", "users.col_role", "users.col_status", "users.col_mobile", "users.col_id",
         "users.tab_active", "users.tab_inactive", "users.tab_blocked", "users.tab_pending",
-        "users.sec_details", "users.sec_security",
+        "users.sec_details", "users.sec_security", "users.sec_payments", "users.sec_payment_stats", "users.sec_recent_transactions", "users.view_payment_amount",
         // Role Assignment
         "roles.create", "roles.edit", "roles.delete", "roles.assign",
         // Role Assignment UI
@@ -103,27 +103,41 @@ export const seedRoles = async (): Promise<void> => {
         "settings.password", "settings.integrations", "settings.danger",
         // Settings UI
         "settings.ui_workspace", "settings.ui_security", "settings.ui_notifications", "settings.ui_integrations", "settings.ui_danger",
+        // Payments
+        "payments.view", "payments.create", "payments.edit", "payments.delete", "payments.export",
+        // Payments UI
+        "payments.ui_search", "payments.ui_status", "payments.ui_direction", "payments.ui_category",
+        "payments.col_user", "payments.col_amount", "payments.col_direction", "payments.col_status",
+        "payments.col_category", "payments.col_source", "payments.col_method", "payments.col_date", "payments.col_actions",
+        // Transactions
+        "transactions.view", "transactions.reject",
       ];
       permissionIds = adminPermissionKeys.map(key => permissionKeyToId.get(key)).filter(Boolean) as string[];
     } else if (roleData.name === "Manager") {
       // Manager gets user management and viewing permissions
       const managerPermissionKeys = [
         // Sidebar Navigation
-        "pages.dashboard", "pages.users", "pages.settings",
+        "pages.dashboard", "pages.users", "pages.settings", "pages.payments", "pages.transactions", "pages.transactions.details",
         // User Management
         "users.create", "users.update", "users.export", "users.view_full_email",
         // User Management UI
         "users.col_name", "users.col_email", "users.col_role", "users.col_status", "users.col_mobile", "users.col_id",
         "users.tab_active", "users.tab_inactive", "users.tab_blocked", "users.tab_pending",
-        "users.sec_details", "users.sec_security",
+        "users.sec_details", "users.sec_security", "users.sec_payments", "users.sec_payment_stats", "users.sec_recent_transactions", "users.view_payment_amount",
         // Settings UI (view only)
         "settings.ui_security", "settings.ui_notifications",
+        // Payments
+        "payments.view",
+        // Payments UI
+        "payments.ui_search", "payments.ui_status", "payments.ui_direction", "payments.ui_category",
+        "payments.col_user", "payments.col_amount", "payments.col_direction", "payments.col_status",
+        "payments.col_category", "payments.col_source", "payments.col_method", "payments.col_date",
       ];
       permissionIds = managerPermissionKeys.map(key => permissionKeyToId.get(key)).filter(Boolean) as string[];
     } else if (roleData.name === "Default Viewer") {
       // Default Viewer gets minimal permissions
       const viewerPermissionKeys = [
-        "pages.dashboard", "pages.users", "pages.settings",
+        "pages.dashboard", "pages.users", "pages.settings", "pages.payments", "pages.transactions", "pages.transactions.details",
       ];
       permissionIds = viewerPermissionKeys.map(key => permissionKeyToId.get(key)).filter(Boolean) as string[];
     }

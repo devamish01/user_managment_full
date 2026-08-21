@@ -17,7 +17,7 @@ import { mockUsers } from "@/mocks/users";
 import { formatCurrency, formatDate } from "@/lib/helpers";
 import { cn } from "@/shared/utils/cn";
 
-import type { PaymentRecord, PaymentStatus, PaymentCategory, PaymentMethod, PaymentDirection, PaymentSource, PaymentTimelineEntry, ChangeHistoryEntry } from "@/modules/payments/types";
+import type { PaymentRecord, PaymentStatus, PaymentCategory, PaymentMethod, PaymentDirection, PaymentSource, PaymentTimelineEntry } from "@/modules/payments/types";
 
 interface TransactionFormDialogProps {
   open: boolean;
@@ -48,7 +48,7 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
   // Load payment data when in edit mode
   useEffect(() => {
     if (payment) {
-      setUserId(payment.user.id);
+      setUserId(payment.userId);
       setAmount(payment.amount);
       setDirection(payment.direction);
       setStatus(payment.status);
@@ -104,6 +104,11 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
       setFormError("Please select a payment date");
       return;
     }
+    // UTR number is required for create mode
+    if (!isEditMode && !utrNumber.trim()) {
+      setFormError("UTR number is required");
+      return;
+    }
 
     // For completed transactions, require correction reason
     if (isEditMode && isCompletedTransaction && !correctionReason.trim()) {
@@ -112,7 +117,8 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
       return;
     }
 
-    const selectedUserData = mockUsers.find((u) => u.id === userId) || payment?.user;
+    const selectedUserData = mockUsers.find((u) => u.id === userId);
+    const selectedUserName = selectedUserData?.name || payment?.userName || "Unknown User";
     if (!selectedUserData) {
       setFormError("Selected user not found");
       return;
@@ -235,69 +241,43 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
       });
     }
 
-    // Create change history entries for the mock API
-    const changeHistoryEntries: ChangeHistoryEntry[] = changes.map(change => ({
-      transactionId: payment!.id,
-      field: change.field,
-      oldValue: change.oldValue,
-      newValue: change.newValue,
-      changedBy: "Admin User",
-      changedAt: now,
-      reason: correctionReason || undefined,
-    }));
-    
-    const updatedRecord: PaymentRecord = {
-      ...(payment || {
-        id: "",
-        user: selectedUserData,
-        amount: 0,
-        direction: "credit",
-        status: "Pending",
-        category: "Donation",
-        paymentSource: "ADMIN_ADDED",
-        paymentMethod: "UPI",
-        utrNumber: "—",
-        notes: "",
-        paymentDate: now,
-        createdAt: now,
-        updatedAt: now,
-        createdByInfo: {
-          id: "USR-00001",
-          name: "Admin User",
-          role: "Admin",
-        },
-        timeline: [],
-      }),
-      user: selectedUserData,
+    // Create base record with all required fields
+    const baseRecord: PaymentRecord = {
+      transactionId: isEditMode ? payment!.transactionId : `TXN-${String(Date.now()).slice(-6).padStart(6, "0")}`,
+      userId: selectedUserData.id,
+      userName: selectedUserName,
       amount: numAmount,
       direction,
       status,
       category,
       paymentMethod,
       paymentSource,
-      utrNumber: utrNumber.trim() || "—",
+      utrNumber: utrNumber.trim(),
       paymentDate: paymentDate ? `${paymentDate}T00:00:00Z` : (payment?.paymentDate || now),
       notes,
       timeline: timelineEntries,
       updatedAt: now,
-      // For new transactions, set createdAt and createdByInfo
-      ...(!isEditMode && {
-        id: `TXN-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
-        createdAt: now,
-        createdByInfo: {
-          id: "USR-00001",
-          name: "Admin User",
-          role: "Admin",
-        },
-      }),
-      // For edit mode, preserve and extend change history
-      ...(isEditMode && {
-        isModified: true,
-        lastModifiedAt: now,
-        lastModifiedBy: "Admin User",
-        changeHistory: [...(payment?.changeHistory || []), ...changeHistoryEntries],
-      }),
+      createdAt: isEditMode ? payment!.createdAt : now,
+      createdByInfo: isEditMode ? payment!.createdByInfo : {
+        id: "USR-00001",
+        name: "Admin User",
+        role: "Admin",
+      },
+      screenshotUrl: isEditMode ? payment!.screenshotUrl : null,
+      verifiedBy: isEditMode ? payment!.verifiedBy : null,
+      verifiedAt: isEditMode ? payment!.verifiedAt : null,
+      verificationNotes: isEditMode ? payment!.verificationNotes : null,
     };
+
+    // Add audit fields for edit mode
+    const updatedRecord: PaymentRecord = isEditMode
+      ? {
+          ...baseRecord,
+          isModified: true,
+          lastModifiedAt: now,
+          lastModifiedBy: "Admin User",
+        }
+      : baseRecord;
 
     if (onSave) {
       onSave(updatedRecord);
@@ -309,7 +289,7 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
     <SharedModal
       open={open}
       onClose={onClose}
-      title={isEditMode ? `Edit Transaction (${payment?.id})` : "Add New Transaction"}
+      title={isEditMode ? `Edit Transaction (${payment?.transactionId})` : "Add New Transaction"}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -432,7 +412,9 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">UTR Number</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              UTR Number {!isEditMode && <span className="text-destructive">*</span>}
+            </label>
             <SharedInput
               value={utrNumber}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setUtrNumber(e.target.value)}

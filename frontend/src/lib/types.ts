@@ -43,7 +43,8 @@ export interface PaymentCreatedByInfo {
 
 export interface PaymentRecord {
   id: string;
-  user: PaymentUser;
+  userId: string;
+  user?: PaymentUser;
   amount: number;
   direction: PaymentDirection;
   status: PaymentStatus;
@@ -123,4 +124,5 @@ export type RouteName =
   | "logs"
   | "settings"
   | "payments"
-  | "transactions";
+  | "transactions"
+  | "profile";

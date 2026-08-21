@@ -13,8 +13,7 @@ import { SharedButton } from "@/shared/components/SharedButton";
 import { SharedPagination } from "@/shared/components/SharedPagination";
 import { Download, Plus, ArrowLeft, User } from "lucide-react";
 import { usePaymentsStore } from "../store";
-import { useToast } from "@/components/ui/toast";
-import { useHasPermission } from "@/store";
+import { useToastError } from "@/core/api/toastUtils";
 import type { PaymentRecord, PaymentStatus, PaymentDirection, PaymentCategory } from "../types";
 import type { PaginationMeta } from "@/shared/types/pagination";
 
@@ -25,10 +24,8 @@ import { useTransactionPermissions } from "@/modules/payments/components/transac
 
 export const TransactionsPage = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const userId = searchParams.get("userId");
-  const { payments, loading, error, getPayments, createPayment, updatePayment, deletePayment } = usePaymentsStore();
-  const { toast } = useToast();
+  const { payments, loading, error, getPayments, getTransactions, createPayment, updatePayment, deletePayment } = usePaymentsStore();
+  const { toastError, toastSuccess } = useToastError();
 
   // Permission checks
   const {
@@ -53,7 +50,7 @@ export const TransactionsPage = () => {
 //   }, [payments, loading, error]);
 
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all" | "pending" | "credit" | "debit">("all");
+  const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all" | "pending" | "completed" | "rejected" | "refunded" | "credit" | "debit">("all");
   const [directionFilter, setDirectionFilter] = useState<PaymentDirection | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<PaymentCategory | "all">("all");
   const [page, setPage] = useState(1);
@@ -66,35 +63,32 @@ export const TransactionsPage = () => {
   const [editingPayment, setEditingPayment] = useState<PaymentRecord | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
-  // Fetch user data if userId is provided
-  const [userData, setUserData] = useState<{ id: string; name: string; email: string } | null>(null);
-  
-  useEffect(() => {
-    if (userId) {
-      // Find user in payments data
-      const user = payments.find(p => p.user?.id === userId)?.user;
-      if (user) {
-        setUserData({ id: user.id, name: user.name, email: user.email });
-      }
-    } else {
-      setUserData(null);
-    }
-  }, [userId, payments]);
-
   // Compute stats from all payments (not just filtered)
   const stats = useMemo(() => ({
     total: payments.length,
     totalIn: payments.filter(p => p.direction === "credit").reduce((sum, p) => sum + p.amount, 0),
     totalOut: payments.filter(p => p.direction === "debit").reduce((sum, p) => sum + p.amount, 0),
     pending: payments.filter(p => p.status === "Pending").length,
+    completed: payments.filter(p => p.status === "Completed").length,
+    rejected: payments.filter(p => p.status === "Rejected").length,
+    refunded: payments.filter(p => p.status === "Refunded").length,
   }), [payments]);
 
-  const handleStatusClick = (status: "all" | "pending" | "credit" | "debit") => {
+  const handleStatusClick = (status: "all" | "pending" | "completed" | "rejected" | "refunded" | "credit" | "debit") => {
     if (status === "all") {
       setStatusFilter("all");
       setDirectionFilter("all");
     } else if (status === "pending") {
       setStatusFilter("Pending");
+      setDirectionFilter("all");
+    } else if (status === "completed") {
+      setStatusFilter("Completed");
+      setDirectionFilter("all");
+    } else if (status === "rejected") {
+      setStatusFilter("Rejected");
+      setDirectionFilter("all");
+    } else if (status === "refunded") {
+      setStatusFilter("Refunded");
       setDirectionFilter("all");
     } else if (status === "credit") {
       setDirectionFilter("credit");
@@ -107,8 +101,8 @@ export const TransactionsPage = () => {
   };
 
   useEffect(() => {
-    getPayments(userId || undefined);
-  }, [getPayments, userId]);
+    getTransactions();
+  }, [getTransactions]);
 
   const filteredPayments = useMemo(() => {
     let result = [...payments];
@@ -117,11 +111,10 @@ export const TransactionsPage = () => {
       const s = search.toLowerCase();
       result = result.filter(
         (p) =>
-          p.user?.name?.toLowerCase().includes(s) ||
-          p.user?.email?.toLowerCase().includes(s) ||
+          p.userName?.toLowerCase().includes(s) ||
           p.utrNumber?.toLowerCase().includes(s) ||
           p.notes?.toLowerCase().includes(s) ||
-          p.id?.toLowerCase().includes(s)
+          p.transactionId?.toLowerCase().includes(s)
       );
     }
 
@@ -177,7 +170,7 @@ export const TransactionsPage = () => {
   };
 
   const handleView = (payment: PaymentRecord) => {
-    navigate(`/payments/transactions/${payment.id}`);
+    navigate(`/payments/transactions/${payment.transactionId}`);
   };
 
   const handleEdit = (payment: PaymentRecord) => {
@@ -191,17 +184,17 @@ export const TransactionsPage = () => {
   };
 
   const handleDelete = async (payment: PaymentRecord) => {
-    if (window.confirm(`Are you sure you want to delete transaction ${payment.id}?`)) {
+    if (window.confirm(`Are you sure you want to delete transaction ${payment.transactionId}?`)) {
       setFormLoading(true);
       try {
-        const success = await deletePayment(payment.id);
+        const success = await deletePayment(payment.transactionId);
         if (success) {
-          toast({ type: "success", title: "Deleted", description: "Transaction has been deleted." });
+          toastSuccess({ success: true, message: "Transaction has been deleted." });
         } else {
-          toast({ type: "error", title: "Error", description: "Failed to delete transaction." });
+          toastError({ message: "Failed to delete transaction." }, { title: "Error" });
         }
       } catch (err) {
-        toast({ type: "error", title: "Error", description: err instanceof Error ? err.message : "Failed to delete transaction" });
+        toastError(err, { title: "Error" });
       } finally {
         setFormLoading(false);
       }
@@ -213,25 +206,25 @@ export const TransactionsPage = () => {
     try {
       if (editingPayment) {
         // Edit mode - update existing payment
-        const res = await updatePayment(editingPayment.id, updatedPayment);
+        const res = await updatePayment(editingPayment.transactionId, updatedPayment);
         if (res) {
-          toast({ type: "success", title: "Updated", description: "Transaction has been updated successfully." });
+          toastSuccess(res);
         } else {
-          toast({ type: "error", title: "Error", description: "Failed to update transaction." });
+          toastError({ message: "Failed to update transaction." }, { title: "Error" });
         }
       } else {
         // Create mode - create new payment
         const res = await createPayment(updatedPayment);
         if (res) {
-          toast({ type: "success", title: "Created", description: "Transaction has been created successfully." });
+          toastSuccess(res);
         } else {
-          toast({ type: "error", title: "Error", description: "Failed to create transaction." });
+          toastError({ message: "Failed to create transaction." }, { title: "Error" });
         }
       }
       setShowFormDialog(false);
       setEditingPayment(null);
     } catch (err) {
-      toast({ type: "error", title: "Error", description: err instanceof Error ? err.message : "Failed to save transaction" });
+      toastError(err, { title: "Error" });
     } finally {
       setFormLoading(false);
     }
@@ -240,11 +233,11 @@ export const TransactionsPage = () => {
   const handleExport = () => {
     // Export logic here
     console.log("Export transactions");
-    toast({ type: "info", title: "Exported!", description: "CSV downloaded." });
+    toastSuccess({ success: true, message: "CSV downloaded." });
   };
 
   const toggleSelectAll = (checked: boolean) => {
-    setSelectedIds(checked ? paginatedPayments.map((p) => p.id) : []);
+    setSelectedIds(checked ? paginatedPayments.map((p) => p.transactionId) : []);
   };
 
   const toggleRowSelection = (id: string, checked: boolean) => {
@@ -280,7 +273,7 @@ export const TransactionsPage = () => {
     return (
       <div className="text-center py-8 text-red-600">
         <p>Error loading transactions: {error}</p>
-        <SharedButton onClick={() => getPayments(userId || undefined)} className="mt-4">
+        <SharedButton onClick={() => getTransactions()} className="mt-4">
           Retry
         </SharedButton>
       </div>
@@ -291,30 +284,11 @@ export const TransactionsPage = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          {userData && (
-            <SharedButton variant="ghost" size="icon" onClick={() => navigate(`/users/${userData.id}`)}>
-              <ArrowLeft className="h-4 w-4" />
-            </SharedButton>
-          )}
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {userData ? `Transactions for ${userData.name}` : "Transactions"}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {userData 
-                ? `Viewing transactions for ${userData.name} (${userData.email})` 
-                : "View and manage all payment transactions"}
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Transactions</h1>
+          <p className="text-muted-foreground mt-1">View and manage all payment transactions</p>
         </div>
         <div className="flex items-center gap-3">
-          {userData && (
-            <SharedButton variant="outline" onClick={() => navigate(`/users/${userData.id}`)} className="gap-2">
-              <User className="h-4 w-4" />
-              Back to User Details
-            </SharedButton>
-          )}
           {canExport && (
             <SharedButton variant="outline" onClick={handleExport} className="gap-2">
               <Download className="h-4 w-4" />
@@ -363,7 +337,7 @@ export const TransactionsPage = () => {
           data={paginatedPayments}
           sort={sortConfig}
           onSort={handleSort}
-          rowKey={(payment) => payment.id}
+          rowKey={(payment) => payment.transactionId}
           emptyMessage="No transactions found"
         />
         <SharedPagination

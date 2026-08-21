@@ -14,6 +14,7 @@
 import * as React from "react";
 import type { NavigationItem } from "@/lib/types";
 import { NavigationService } from "../services";
+import { getErrorMessage } from "@/core/api/errorUtils";
 
 export interface NavigationStoreState {
   navigation: NavigationItem[];
@@ -33,9 +34,9 @@ export const useNavigationStore = (): NavigationStoreState => {
     try {
       const res = await NavigationService.getNavigation();
       if (res.success && res.data) setNavigation(res.data);
-      else setError(res.message || "Failed to load navigation");
+      else setError(getErrorMessage(res));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load navigation");
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

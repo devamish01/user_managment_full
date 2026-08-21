@@ -26,11 +26,17 @@ interface UsersState {
 
 interface UsersActions {
   getUsers: (params?: UserQueryParams) => Promise<void>;
+  getUserById: (id: string) => Promise<Awaited<ReturnType<typeof UserService.getUserById>>>;
   createUser: (
     data: UserFormState
-  ) => Promise<void>;
-  updateUser: (id: string, data: Partial<User>) => Promise<void>;
-  deleteUser: (id: string) => Promise<void>;
+  ) => Promise<Awaited<ReturnType<typeof UserService.createUser>>>;
+  // updateUser: (id: string, data: Partial<User>) => Promise<void>;
+  updateUser: (
+  id: string,
+  data: Partial<User>
+) => Promise<Awaited<ReturnType<typeof UserService.updateUser>>>;
+  deleteUser: (id: string) => Promise<Awaited<ReturnType<typeof UserService.deleteUser>>>;
+  resetUserPassword: (id: string, password: string, confirmPassword?: string) => Promise<Awaited<ReturnType<typeof UserService.resetUserPassword>>>;
   reset: () => void;
 }
 
@@ -52,7 +58,6 @@ export const useUsersStore = create<UsersStore>((set, get) => ({
 
     try {
       const response = await UserService.getUsers(params);
-      console.log("response", response);
       if (!response.success) {
         throw new Error(response.message || "Failed to load users");
       }
@@ -77,6 +82,36 @@ export const useUsersStore = create<UsersStore>((set, get) => ({
     }
   },
 
+  getUserById: async (id: string) => {
+    set({
+      loading: true,
+      error: null,
+    });
+
+    try {
+      const response = await UserService.getUserById(id);
+
+      if (!response.success) {
+        throw response;
+      }
+
+      return response;
+    } catch (error) {
+      set({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to load user",
+      });
+
+      throw error;
+    } finally {
+      set({
+        loading: false,
+      });
+    }
+  },
+
   createUser: async (data) => {
     set({
       loading: true,
@@ -91,6 +126,8 @@ export const useUsersStore = create<UsersStore>((set, get) => ({
       }
 
       await get().getUsers();
+
+      return response;
     } catch (error) {
       set({
         error:
@@ -107,35 +144,37 @@ export const useUsersStore = create<UsersStore>((set, get) => ({
     }
   },
 
-  updateUser: async (id, data) => {
+ updateUser: async (id, data) => {
+  set({
+    loading: true,
+    error: null,
+  });
+
+  try {
+    const response = await UserService.updateUser(id, data);
+
+    if (!response.success) {
+      throw new Error(response.message || "Failed to update user");
+    }
+
+    await get().getUsers();
+
+    return response; // ✅ IMPORTANT
+  } catch (error) {
     set({
-      loading: true,
-      error: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to update user",
     });
 
-    try {
-      const response = await UserService.updateUser(id, data);
-
-      if (!response.success) {
-        throw new Error(response.message || "Failed to update user");
-      }
-
-      await get().getUsers();
-    } catch (error) {
-      set({
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to update user",
-      });
-
-      throw error;
-    } finally {
-      set({
-        loading: false,
-      });
-    }
-  },
+    throw error;
+  } finally {
+    set({
+      loading: false,
+    });
+  }
+},
 
   deleteUser: async (id) => {
     set({
@@ -151,6 +190,8 @@ export const useUsersStore = create<UsersStore>((set, get) => ({
       }
 
       await get().getUsers();
+
+      return response;
     } catch (error) {
       set({
         error:
@@ -166,6 +207,40 @@ export const useUsersStore = create<UsersStore>((set, get) => ({
       });
     }
   },
+
+ resetUserPassword: async (id, password, confirmPassword = "") => {
+  set({
+    loading: true,
+    error: null,
+  });
+
+  try {
+    const response = await UserService.resetUserPassword(
+      id,
+      password,
+      confirmPassword
+    );
+
+    if (!response.success) {
+      throw new Error(response.message || "Failed to reset password");
+    }
+
+    return response;
+  } catch (error) {
+    set({
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to reset password",
+    });
+
+    throw error;
+  } finally {
+    set({
+      loading: false,
+    });
+  }
+},
 
   reset: () => {
     set({

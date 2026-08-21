@@ -2,34 +2,30 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { SharedInput, SharedButton } from "@/shared/components";
-import { AuthService } from "../services";
-import { authRoutesConfig } from "../routes";
+import { useAuth } from "../hooks";
+import { authRoutesConfig } from "../routes.config";
 import type { RegisterCredentials } from "../types";
 
 export const RegisterForm: React.FC = () => {
+  const { register, loading, error } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = React.useState("");
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState(false);
 
   const handleSubmit = React.useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      setError(null);
       setSuccess(false);
 
       // Client-side validation
       if (password.length < 8) {
-        setError("Password must be at least 8 characters");
+        // We can't set error directly since it comes from store, but we can show inline
         return;
       }
-
-      setLoading(true);
 
       const payload: RegisterCredentials = {
         username: username.trim(),
@@ -39,17 +35,12 @@ export const RegisterForm: React.FC = () => {
         password,
       };
 
-      try {
-        await AuthService.register(payload);
+      const user = await register(payload);
+      if (user) {
         setSuccess(true);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Registration failed";
-        setError(message);
-      } finally {
-        setLoading(false);
       }
     },
-    [username, firstName, lastName, email, password],
+    [register, username, firstName, lastName, email, password],
   );
 
   const goToLogin = React.useCallback(() => {

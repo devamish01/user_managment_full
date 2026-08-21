@@ -7,4 +7,5 @@ export interface NavigationItem {
   icon?: string;
   route?: string;
   permission?: string;
+  module?: string;
 }

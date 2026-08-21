@@ -7,7 +7,7 @@ import React from "react";
 import { ArrowLeft, Save, X, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "@/store";
-import { useToast } from "@/components/ui/toast";
+import { useToastError } from "@/core/api/toastUtils";
 import { SharedButton } from "@/shared/components";
 import { cn } from "@/shared/utils/cn";
 import { useUserForm } from "../hooks/useUserForm";
@@ -24,7 +24,7 @@ export interface UserFormProps {
 export const UserForm: React.FC<UserFormProps> = ({ id, onCancel }) => {
   const { users, roles, getUsers, createUser, updateUser, addLog } = useStore();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toastError, toastSuccess } = useToastError();
   const { currentUser: authUser } = useAuth();
 
   const editing = id ? users.find((u) => u.id === id) : undefined;
@@ -80,11 +80,11 @@ export const UserForm: React.FC<UserFormProps> = ({ id, onCancel }) => {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.firstName || !form.lastName || !form.email) {
-      toast({ type: "error", title: "Missing fields", description: "First name, last name and email are required." });
+      toastError(new Error("First name, last name and email are required."), { title: "Missing fields" });
       return;
     }
     if (!currentUserData && !form.password) {
-      toast({ type: "error", title: "Missing fields", description: "Password is required for new users." });
+      toastError(new Error("Password is required for new users."), { title: "Missing fields" });
       return;
     }
 
@@ -95,24 +95,19 @@ export const UserForm: React.FC<UserFormProps> = ({ id, onCancel }) => {
         const finalPayload = isRequesterSuperAdmin
           ? updatePayload
           : (({ isProtected, ...rest }) => rest)(updatePayload);
-        await updateUser(currentUserData.id, finalPayload);
+        const response = await updateUser(currentUserData.id, finalPayload);
         addLog({ userId: users[0]?.id || "u", action: "Updated profile", target: `${form.firstName} ${form.lastName}`, type: "update" });
         await getUsers();
-        toast({ type: "success", title: "User updated", description: `${form.firstName} ${form.lastName}'s profile has been saved.` });
+        toastSuccess(response);
       } else {
-        await createUser(form);
+        const response = await createUser(form);
         addLog({ userId: users[0]?.id || "u", action: "Created user", target: `${form.firstName} ${form.lastName}`, type: "create" });
         await getUsers();
-        toast({ type: "success", title: "User created", description: `${form.firstName} ${form.lastName} has been added.` });
+        toastSuccess(response);
       }
       navigate(userRoutesConfig.list());
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Please try again.";
-      toast({
-        type: "error",
-        title: editing ? "Update failed" : "Create failed",
-        description: message,
-      });
+      toastError(error, { title: editing ? "Update failed" : "Create failed" });
     }
   };
 

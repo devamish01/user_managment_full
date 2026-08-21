@@ -7,26 +7,26 @@
  * Protected by PermissionGuard requiring "pages.transactions.details" permission.
  */
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, CheckCircle, XCircle, AlertCircle, Loader2, FileText, User, CreditCard, Clock, History, MessageSquare, Link2, Image, Shield, Download, ExternalLink, Edit } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, AlertCircle, Loader2, FileText, User, Clock, MessageSquare, Link2, Image, Shield, Download, ExternalLink, Edit, ChevronDown, ChevronUp, History } from "lucide-react";
 import { SharedButton } from "@/shared/components/SharedButton";
 import { SharedBadge } from "@/shared/components/SharedBadge";
 import { SharedModal } from "@/shared/components/SharedModal";
 import { usePaymentsStore } from "../store";
-import { useToast } from "@/components/ui/toast";
+import { useToastError } from "@/core/api/toastUtils";
 import { formatCurrency, formatDateTime } from "@/lib/helpers";
 import { cn } from "@/shared/utils/cn";
 import { TransactionFormDialog } from "../components/transactions/TransactionFormDialog";
 import { useTransactionDetailsPermissions } from "./transaction-details-permissions";
 
-import type { PaymentRecord, PaymentStatus, PaymentDirection, PaymentCategory, PaymentSource, PaymentMethodPaymentTimelineEntry,  } from "../types";
+import type { PaymentRecord, PaymentStatus, PaymentDirection, PaymentCategory, PaymentSource, PaymentTimelineEntry, PaymentTimelineChange } from "../types";
 
 export const TransactionDetailsPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { transactionId } = useParams<{ transactionId: string }>();
   const navigate = useNavigate();
   const { payments, getPaymentById, approvePayment, rejectPayment, updatePayment } = usePaymentsStore();
-  const { toast } = useToast();
+  const { toastError, toastSuccess } = useToastError();
 
   const [transaction, setTransaction] = useState<PaymentRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +37,7 @@ export const TransactionDetailsPage = () => {
   const [approveNotes, setApproveNotes] = useState("");
   const [rejectNotes, setRejectNotes] = useState("");
   const [dialogLoading, setDialogLoading] = useState(false);
+  const [expandedTimelineEntries, setExpandedTimelineEntries] = useState<Set<string>>(new Set());
   // const [changeHistory, setChangeHistory] = useState<ChangeHistoryEntry[]>([]);
   // const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -49,11 +50,9 @@ export const TransactionDetailsPage = () => {
     editAmount: canEditAmount,
     viewInfoSection: canViewInfoSection,
     viewUserSection: canViewUserSection,
-    viewPaymentSection: canViewPaymentSection,
     viewAttachmentSection: canViewAttachmentSection,
     viewNotesSection: canViewNotesSection,
     viewVerificationSection: canViewVerificationSection,
-    viewLinkedSection: canViewLinkedSection,
     viewTimelineSection: canViewTimelineSection,
     // viewHistorySection: canViewHistorySection,
     showApproveButton: canShowApproveButton,
@@ -69,31 +68,31 @@ export const TransactionDetailsPage = () => {
 
   // Load transaction on mount
   useEffect(() => {
-    if (id) {
+    if (transactionId) {
       loadTransaction();
     }
-  }, [id]);
+  }, [transactionId]);
 
   const loadTransaction = async () => {
-    if (!id) return;
+    if (!transactionId) return;
     setLoading(true);
     setError(null);
     try {
       // First check if we have it in the store
-      const cached = payments.find((p) => p.id === id);
+      const cached = payments.find((p) => p.transactionId === transactionId);
       if (cached) {
         setTransaction(cached);
         setLoading(false);
         // Load change history
-        // loadChangeHistory(id);
+        // loadChangeHistory(transactionId);
         return;
       }
       // Otherwise fetch from API
-      const fetched = await getPaymentById(id);
+      const fetched = await getPaymentById(transactionId);
       if (fetched) {
         setTransaction(fetched);
         // Load change history
-        // loadChangeHistory(id);
+        // loadChangeHistory(transactionId);
       } else {
         setError("Transaction not found");
       }
@@ -121,15 +120,15 @@ export const TransactionDetailsPage = () => {
     if (!transaction) return;
     setDialogLoading(true);
     try {
-      const res = await approvePayment(transaction.id, "Current User", approveNotes);
+      const res = await approvePayment(transaction.transactionId, "Current User", approveNotes);
       if (res) {
         setTransaction(res);
-        toast({ type: "success", title: "Approved", description: "Transaction has been approved." });
+        toastSuccess(res);
         setShowApproveDialog(false);
         setApproveNotes("");
       }
     } catch (err) {
-      toast({ type: "error", title: "Error", description: err instanceof Error ? err.message : "Failed to approve" });
+      toastError(err, { title: "Error" });
     } finally {
       setDialogLoading(false);
     }
@@ -139,15 +138,15 @@ export const TransactionDetailsPage = () => {
     if (!transaction) return;
     setDialogLoading(true);
     try {
-      const res = await rejectPayment(transaction.id, "Current User", rejectNotes);
+      const res = await rejectPayment(transaction.transactionId, "Current User", rejectNotes);
       if (res) {
         setTransaction(res);
-        toast({ type: "success", title: "Rejected", description: "Transaction has been rejected." });
+        toastSuccess(res);
         setShowRejectDialog(false);
         setRejectNotes("");
       }
     } catch (err) {
-      toast({ type: "error", title: "Error", description: err instanceof Error ? err.message : "Failed to reject" });
+      toastError(err, { title: "Error" });
     } finally {
       setDialogLoading(false);
     }
@@ -181,10 +180,6 @@ export const TransactionDetailsPage = () => {
     return labels[source] || source;
   };
 
-  const formatMethod = (method: PaymentMethod) => {
-    return method;
-  };
-
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -192,10 +187,6 @@ export const TransactionDetailsPage = () => {
       .join("")
       .toUpperCase()
       .slice(0, 2);
-  };
-
-  const getAvatarColor = (color?: string) => {
-    return color || "bg-primary";
   };
 
   const timelineIcon = (entry: PaymentTimelineEntry) => {
@@ -336,7 +327,7 @@ export const TransactionDetailsPage = () => {
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-foreground">Transaction Not Found</h2>
-        <p className="text-muted-foreground mt-2">{error || `Transaction ${id} does not exist`}</p>
+        <p className="text-muted-foreground mt-2">{error || `Transaction ${transactionId} does not exist`}</p>
         <SharedButton variant="outline" onClick={() => navigate("/payments/transactions")} className="mt-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Transactions
@@ -410,18 +401,18 @@ export const TransactionDetailsPage = () => {
         }
       }
       
-      const res = await updatePayment(transaction.id, updated, correctionReason);
+      const res = await updatePayment(transaction.transactionId, updated, correctionReason);
       if (res) {
         setTransaction(res);
         // Reload change history after successful edit
-        // loadChangeHistory(transaction.id);
-        toast({ type: "success", title: "Updated", description: "Payment has been updated successfully." });
+        // loadChangeHistory(transaction.transactionId);
+        toastSuccess(res);
         setShowEditDialog(false);
       } else {
-        toast({ type: "error", title: "Error", description: "Failed to update payment." });
+        toastError({ message: "Failed to update payment." }, { title: "Error" });
       }
     } catch (err) {
-      toast({ type: "error", title: "Error", description: err instanceof Error ? err.message : "Failed to update payment" });
+      toastError(err, { title: "Error" });
     } finally {
       setDialogLoading(false);
     }
@@ -437,7 +428,7 @@ export const TransactionDetailsPage = () => {
           </SharedButton>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-foreground">{t.id}</h1>
+              <h1 className="text-2xl font-bold text-foreground">{t.transactionId}</h1>
               <SharedBadge variant={getStatusBadgeVariant(t.status)} className="text-xs">
                 {t.status}
               </SharedBadge>
@@ -489,7 +480,7 @@ export const TransactionDetailsPage = () => {
               )}
             </div>
             <div className="divide-y divide-border">
-              <InfoRow label="Transaction ID" value={t.id} />
+              <InfoRow label="Transaction ID" value={t.transactionId} />
               <InfoRow label="Payment Type" value={getDirectionLabel(t.direction)} />
               <InfoRow label="Category" value={formatCategory(t.category)} />
               <InfoRow label="Payment Source" value={<SharedBadge variant="default" className="text-xs">{formatSource(t.paymentSource)}</SharedBadge>} />
@@ -506,7 +497,7 @@ export const TransactionDetailsPage = () => {
           )}
 
           {/* User Information */}
-          {canViewUserSection && (
+          {canViewUserSection && transaction?.userId && (
           <section className="bg-card rounded-lg border border-border p-6 space-y-4">
             <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
               <User className="h-5 w-5" />
@@ -514,41 +505,22 @@ export const TransactionDetailsPage = () => {
             </h2>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
-                <div className={cn("flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold text-white", getAvatarColor(t.user.avatarColor))}>
-                  {getInitials(t.user.name)}
+                <div className={cn("flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold text-white", "bg-primary")}>
+                  {getInitials(transaction.userName || "Unknown")}
                 </div>
                 <div>
-                  <button type="button" onClick={() => navigate(`/users/${t.user.id}`)} className="text-sm font-semibold text-primary hover:underline">
-                    {t.user.name}
+                  <button type="button" onClick={() => navigate(`/users/${transaction.userId}`)} className="text-sm font-semibold text-primary hover:underline">
+                    {transaction.userName || "Unknown User"}
                   </button>
-                  <p className="text-sm text-muted-foreground">{t.user.email}</p>
-                  {t.user.phone && <p className="text-sm text-muted-foreground">+91 {t.user.phone.replace(/(\d{5})(\d{5})/, "$1 $2")}</p>}
+                  <p className="text-sm text-muted-foreground">{transaction.userId}</p>
                 </div>
               </div>
               {canShowViewProfileButton && (
-                <SharedButton variant="outline" size="sm" onClick={() => navigate(`/users/${t.user.id}`)}>
+                <SharedButton variant="outline" size="sm" onClick={() => navigate(`/users/${transaction.userId}`)}>
                   <User className="h-3.5 w-3.5 mr-1" />
                   View Profile
                 </SharedButton>
               )}
-            </div>
-          </section>
-          )}
-
-          {/* Payment Information */}
-          {canViewPaymentSection && (
-          <section className="bg-card rounded-lg border border-border p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Payment Information
-            </h2>
-            <div className="divide-y divide-border">
-              <InfoRow label="Payment Method" value={formatMethod(t.paymentMethod)} />
-              <InfoRow label="UTR Number" value={<code className="font-mono text-foreground">{t.utrNumber}</code>} />
-              <InfoRow label="Reference Module" value={t.referenceModule && t.referenceModule !== "None" ? t.referenceModule : "—"} />
-              <InfoRow label="Reference ID" value={t.referenceId ? <code className="font-mono text-foreground">{t.referenceId}</code> : "—"} />
-              <InfoRow label="Gateway Transaction ID" value={t.gatewayTransactionId ? <code className="font-mono text-foreground">{t.gatewayTransactionId}</code> : "—"} />
-              <InfoRow label="Gateway Order ID" value={t.gatewayOrderId ? <code className="font-mono text-foreground">{t.gatewayOrderId}</code> : "—"} />
             </div>
           </section>
           )}
@@ -650,23 +622,6 @@ export const TransactionDetailsPage = () => {
           </section>
           )}
 
-          {/* Linked Modules */}
-          {canViewLinkedSection && (
-          <section className="bg-card rounded-lg border-dashed border-border bg-muted/50 p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Link2 className="h-5 w-5" />
-                Linked Modules
-              </h2>
-            </div>
-            <p className="text-sm text-muted-foreground">Reserved for future.</p>
-            <div className="divide-y divide-border opacity-70">
-              <InfoRow label="Reference Module" value={t.referenceModule && t.referenceModule !== "None" ? t.referenceModule : "—"} />
-              <InfoRow label="Reference ID" value={t.referenceId ? <code className="font-mono text-foreground">{t.referenceId}</code> : "—"} />
-            </div>
-          </section>
-          )}
-
           {/* Timeline / Activity */}
           {canViewTimelineSection && (
           <section className="bg-card rounded-lg border border-border p-6 space-y-4">
@@ -676,51 +631,117 @@ export const TransactionDetailsPage = () => {
             </h2>
             <p className="text-sm text-muted-foreground">Who changed what, and when.</p>
             {t.timeline && t.timeline.length > 0 ? (
-              <ol className="space-y-6">
-                {t.timeline.map((entry, idx) => {
-                  const done = !!entry.timestamp;
-                  const isLast = idx === t.timeline!.length - 1;
-                  return (
-                    <li key={`${entry.label}-${idx}`} className="relative flex gap-3">
-                      {!isLast && (
-                        <span className={cn("absolute left-[15px] top-8 h-full w-px", done ? "bg-primary/20" : "bg-border")} />
-                      )}
-                      <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-full", timelineTone(entry, done))}>
-                        {timelineIcon(entry)}
-                      </span>
-                      <div className="pb-1">
-                        <div className="flex items-center gap-2">
-                          <p className={cn("text-sm font-medium", done ? "text-foreground" : "text-muted-foreground")}>
-                            {entry.label}
-                          </p>
-                          {entry.field && (
-                            <SharedBadge variant="secondary" className="text-xs px-2 py-0.5">
-                              {entry.field}
-                            </SharedBadge>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <th className="pb-3 pr-4 w-8"></th>
+                      <th className="pb-3 pr-4">Action</th>
+                      <th className="pb-3 pr-4">Changes</th>
+                      <th className="pb-3 pr-4">Changed By</th>
+                      <th className="pb-3">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {t.timeline.map((entry, idx) => {
+                      const done = !!entry.timestamp;
+                      // Get changes from new format or legacy format
+                      const changes = entry.changes || (entry.field ? [{ field: entry.field, oldValue: entry.oldValue || "", newValue: entry.newValue || "" }] : []);
+                      const entryKey = `${entry.label}-${idx}-${entry.timestamp}`;
+                      const isExpanded = expandedTimelineEntries.has(entryKey);
+                      return (
+                        <React.Fragment key={entryKey}>
+                          <tr className={cn("cursor-pointer hover:bg-muted/50 transition-colors", !done && "opacity-60")}>
+                            <td className="py-3 pr-4">
+                              {changes.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setExpandedTimelineEntries((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(entryKey)) {
+                                        next.delete(entryKey);
+                                      } else {
+                                        next.add(entryKey);
+                                      }
+                                      return next;
+                                    });
+                                  }}
+                                  className="flex h-8 w-8 items-center justify-center rounded hover:bg-muted transition-colors"
+                                  aria-label={isExpanded ? "Collapse changes" : "Expand changes"}
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                </button>
+                              )}
+                            </td>
+                            <td className="py-3 pr-4">
+                              <p className={cn("font-medium", done ? "text-foreground" : "text-muted-foreground")}>
+                                {entry.label}
+                              </p>
+                              {entry.description && (
+                                <p className="text-xs text-muted-foreground mt-0.5">{entry.description}</p>
+                              )}
+                            </td>
+                            <td className="py-3 pr-4">
+                              {changes.length > 0 ? (
+                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                  {changes.map((c, i) => (
+                                    <span key={i} className="px-2 py-0.5 rounded bg-muted text-foreground">
+                                      {c.field}
+                                    </span>
+                                  ))}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 pr-4">
+                              {entry.actor && (
+                                <div className="flex items-center gap-1">
+                                  <User className="h-3 w-3 text-muted-foreground" />
+                                  <span className="text-sm text-foreground">{entry.actor}</span>
+                                  {entry.actorRole && (
+                                    <SharedBadge variant="secondary" className="px-1.5 py-0 text-[10px]">
+                                      {entry.actorRole}
+                                    </SharedBadge>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                            <td className="py-3 text-xs text-muted-foreground">
+                              {entry.timestamp ? formatDateTime(entry.timestamp) : "Not yet"}
+                            </td>
+                          </tr>
+                          {changes.length > 0 && isExpanded && (
+                            <tr className="bg-muted/30">
+                              <td colSpan={5} className="py-2 px-4">
+                                <div className="ml-12 border-l-2 border-border pl-3 space-y-1">
+                                  {changes.map((change, changeIdx) => (
+                                    <div key={changeIdx} className="text-xs">
+                                      <span className="font-medium text-foreground">{change.field}:</span>{" "}
+                                      <span className="text-destructive">{change.oldValue || "—"}</span>{" "}
+                                      <span className="text-muted-foreground">→</span>{" "}
+                                      <span className="text-emerald-600">{change.newValue || "—"}</span>
+                                      {entry.reason && changeIdx === changes.length - 1 && (
+                                        <span className="ml-2 text-xs text-muted-foreground">(Reason: {entry.reason})</span>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
                           )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {entry.timestamp ? formatDateTime(entry.timestamp) : "Not yet"}
-                        </p>
-                        {entry.actor && (
-                          <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                            <User className="h-3 w-3" />
-                            {entry.actor}
-                            {entry.actorRole && (
-                              <SharedBadge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px]">
-                                {entry.actorRole}
-                              </SharedBadge>
-                            )}
-                          </p>
-                        )}
-                        {entry.description && (
-                          <p className="mt-0.5 text-xs text-muted-foreground">{entry.description}</p>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ol>
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="text-muted-foreground text-center py-8">No timeline entries available.</p>
             )}

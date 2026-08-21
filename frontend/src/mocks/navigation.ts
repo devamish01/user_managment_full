@@ -39,6 +39,7 @@ export const mockNavigation: NavigationItem[] = [
     children: [
       { id: "nav-logs", title: "Activity Logs", icon: "activity", route: "logs", permission: "pages.logs", order: 1, visible: true, children: [] },
       { id: "nav-settings", title: "Settings", icon: "settings", route: "settings", permission: "pages.settings", order: 2, visible: true, children: [] },
+      { id: "nav-profile", title: "My Profile", icon: "user", route: "profile", permission: "pages.settings", order: 3, visible: true, children: [] },
     ],
   },
 ];

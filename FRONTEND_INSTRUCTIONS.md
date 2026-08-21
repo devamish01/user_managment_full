@@ -1,503 +1,548 @@
-# Frontend Architecture & API Documentation
+# Frontend Development Instructions
 
-## Project Overview
-**React Vite Tailwind** - Modern React 19 frontend with TypeScript, Vite, Tailwind CSS 4, and Zustand for state management.
+## Module Structure Template
 
-## Tech Stack
-- **Framework**: React 19.2.6
-- **Build Tool**: Vite 7.x
-- **Language**: TypeScript 5.x (strict mode)
-- **Styling**: Tailwind CSS 4.x + clsx + tailwind-merge
-- **Routing**: React Router DOM 7.x
-- **State Management**: Zustand 5.x
-- **HTTP Client**: Axios 1.x (via custom ApiClient wrapper)
-- **Icons**: Lucide React
-- **Linting**: ESLint 9 + TypeScript ESLint
-
-## Project Structure
 ```
-frontend/
-├── src/
-│   ├── main.tsx                 # App entry point
-│   ├── App.tsx                  # Root component (minimal)
-│   ├── index.css                # Global styles + Tailwind imports
-│   ├── vite-env.d.ts            # Vite type declarations
-│   │
-│   ├── api/                     # Legacy API barrel (backward compat)
-│   │   ├── endpoints.ts         # Re-exports all feature endpoints
-│   │   └── index.ts             # Re-exports core API + mockClient
-│   │
-│   ├── core/                    # Generic infrastructure (shared)
-│   │   ├── api/                 # Core HTTP client + types
-│   │   │   ├── client.ts        # ApiClient class (GET, POST, PUT, PATCH, DELETE)
-│   │   │   ├── types.ts         # ApiResponse, Pagination, ApiError, etc.
-│   │   │   ├── response.ts      # Response helpers
-│   │   │   ├── apiAdapter.ts    # Adapter pattern for mock/real backend
-│   │   │   └── index.ts         # Core API barrel
-│   │   ├── auth/                # Auth infrastructure (empty - feature-owned)
-│   │   ├── authorization/       # Permission utilities
-│   │   ├── config/              # App configuration
-│   │   └── mock/                # Mock backend implementation
-│   │
-│   ├── lib/                     # Shared utilities & types
-│   │   ├── helpers.ts           # Utility functions
-│   │   ├── permissions.ts       # Permission constants & helpers
-│   │   └── types.ts             # Shared domain types (User, Role, Permission, etc.)
-│   │
-│   ├── mocks/                   # Mock data for development
-│   │   ├── auth.ts
-│   │   ├── logs.ts
-│   │   ├── navigation.ts
-│   │   ├── permissions.ts
-│   │   ├── roles.ts
-│   │   └── users.ts
-│   │
-│   ├── modules/                 # Feature modules (domain-driven)
-│   │   ├── auth/                # Authentication feature
-│   │   │   ├── api/             # Auth API (endpoints + client)
-│   │   │   ├── components/      # Auth UI components
-│   │   │   ├── hooks/           # Auth React hooks
-│   │   │   ├── pages/           # LoginPage, RegisterPage
-│   │   │   ├── routes.tsx       # Auth route definitions
-│   │   │   ├── services/        # AuthService (business logic)
-│   │   │   ├── store/           # Auth Zustand store
-│   │   │   ├── types/           # Auth-specific types
-│   │   │   └── utils/           # Auth utilities
-│   │   │
-│   │   ├── dashboard/           # Dashboard feature
-│   │   │   ├── components/
-│   │   │   ├── hooks/
-│   │   │   └── routes.tsx
-│   │   │
-│   │   ├── users/               # User management feature
-│   │   │   ├── api/             # User API
-│   │   │   ├── components/      # UserList, UserDetails, UserForm
-│   │   │   ├── hooks/
-│   │   │   ├── pages/           # UserList page
-│   │   │   ├── routes.tsx       # User routes with PermissionGuard
-│   │   │   ├── services/
-│   │   │   ├── shared/
-│   │   │   ├── store/
-│   │   │   ├── types.ts
-│   │   │   └── utils/
-│   │   │
-│   │   ├── roles/               # Role management feature
-│   │   │   ├── api/
-│   │   │   ├── components/      # RoleAssignment
-│   │   │   ├── hooks/
-│   │   │   ├── pages/
-│   │   │   ├── routes.tsx
-│   │   │   ├── services/
-│   │   │   ├── store/
-│   │   │   ├── types/
-│   │   │   └── utils/
-│   │   │
-│   │   ├── permissions/         # Permission management feature
-│   │   │   ├── api/
-│   │   │   ├── components/      # Permissions table
-│   │   │   ├── hooks/
-│   │   │   ├── pages/
-│   │   │   ├── routes.tsx
-│   │   │   ├── services/
-│   │   │   ├── store/
-│   │   │   ├── types/
-│   │   │   └── utils/
-│   │   │
-│   │   ├── navigation/          # Navigation feature
-│   │   │   ├── api/
-│   │   │   ├── components/
-│   │   │   ├── services/
-│   │   │   └── store/
-│   │   │
-│   │   ├── logs/                # Activity logs feature
-│   │   │   └── routes.tsx
-│   │   │
-│   │   ├── settings/            # Settings feature
-│   │   │   └── routes.tsx
-│   │   │
-│   │   ├── system/              # System feature (logs, settings)
-│   │   │   └── api/
-│   │   │
-│   │   ├── dashboard.routes.tsx # Dashboard route definitions
-│   │   ├── logs.routes.tsx
-│   │   ├── overview.routes.tsx
-│   │   └── settings.routes.tsx
-│   │
-│   ├── pages/                   # Legacy page components (being migrated)
-│   │   ├── ActivityLogs.tsx
-│   │   ├── Dashboard.tsx
-│   │   ├── Dashboard copy.tsx
-│   │   ├── Overview.tsx
-│   │   ├── Overview copy.tsx
-│   │   └── Settings.tsx
-│   │
-│   ├── router/                  # Routing infrastructure
-│   │   ├── index.tsx            # Router exports
-│   │   ├── routes.tsx           # Main router configuration
-│   │   ├── guards/              # Route guards
-│   │   │   └── ProtectedRoute.tsx
-│   │   └── pages/               # Error pages
-│   │       ├── NotFound.tsx
-│   │       └── Forbidden.tsx
-│   │
-│   ├── routes/                  # Legacy routes barrel
-│   │   ├── index.ts
-│   │   └── README.md
-│   │
-│   ├── services/                # Legacy services (being migrated to modules)
-│   │   ├── auth.service.ts
-│   │   ├── navigation.service.ts
-│   │   └── system.service.ts
-│   │
-│   ├── shared/                  # Shared UI components & utilities
-│   │   ├── components/          # Reusable UI components
-│   │   ├── constants/
-│   │   ├── hooks/               # Shared React hooks
-│   │   ├── layouts/             # AdminLayout, etc.
-│   │   ├── providers/           # Context providers
-│   │   │   ├── AppProviders.tsx # Root providers wrapper
-│   │   │   └── AuthBootstrap.tsx # Auth initialization
-│   │   ├── types/
-│   │   └── utils/
-│   │
-│   ├── store/                   # Global Zustand stores (legacy)
-│   │   ├── constants.ts
-│   │   ├── index.ts
-│   │   ├── context/
-│   │   ├── hooks/
-│   │   └── providers/
-│   │
-│   └── utils/                   # Utility functions
-│       └── cn.ts                # clsx + tailwind-merge helper
-│
-├── index.html
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── eslint.config.js
+frontend/src/modules/<module-name>/
+├── api/
+│   ├── <module>.endpoints.ts    # URL constants only
+│   ├── <module>.api.ts          # ApiClient wrapper with typed methods
+│   └── index.ts                 # Barrel export
+├── components/
+│   ├── <Component>.tsx          # Reusable components
+│   └── index.ts                 # Barrel export
+├── hooks/
+│   ├── use<Feature>.ts          # Custom hooks
+│   └── index.ts                 # Barrel export
+├── pages/
+│   ├── <Page>.tsx               # Page-level components
+│   └── index.ts                 # Barrel export
+├── routes.tsx                   # Route definitions (RouteObject[])
+├── services/
+│   ├── <module>.service.ts      # Business logic layer
+│   └── index.ts                 # Barrel export
+├── store/
+│   ├── <module>.store.ts        # Zustand store (useSyncExternalStore)
+│   └── index.ts                 # Barrel export
+├── types/
+│   ├── index.ts                 # Barrel export
+│   └── <type>.ts                # Module-specific types
+├── utils/
+│   ├── index.ts                 # Barrel export
+│   └── <utility>.ts
+├── shared/
+│   ├── components/              # Shared components within module
+│   ├── constants/               # Shared constants within module
+│   └── types/                   # Shared types within module
+└── index.ts                     # Main barrel export
 ```
 
-## Routing Architecture
+## Required Files for Every Module
 
-### Route Tree
-```
-/                                    → AppRoot (AppProviders only)
-├─ login                             → LoginPage (public)
-├─ register                          → RegisterPage (public)
-└─ ""                                → ProtectedRoute (auth gate)
-     └─ ""                           → AdminLayout shell
-          ├─ index                   → /dashboard (redirect)
-          ├─ dashboard               → Dashboard feature
-          ├─ users/**                → Users feature (PermissionGuard: pages.users)
-          ├─ roles/assignment        → Roles feature (PermissionGuard: pages.assignment)
-          ├─ permissions             → Permissions feature (PermissionGuard: pages.permissions)
-          ├─ logs                    → Logs feature
-          ├─ settings                → Settings feature
-          └─ *                       → NotFound
-/403                                 → Forbidden (public)
-/404                                 → NotFound (public)
-```
-
-### Route Guards
-- **ProtectedRoute**: Checks authentication, redirects to `/login` if unauthenticated
-- **PermissionGuard**: Checks specific permission, shows Forbidden if not authorized
-
-### Feature Route Pattern
-Each feature module owns its routes in `modules/<feature>/routes.tsx`:
+### 1. Endpoints (`api/<module>.endpoints.ts`)
 ```typescript
-export const featureRoutes: RouteObject[] = [
+/**
+ * <Module> module endpoint registry.
+ * Contains only URL definitions — no HTTP logic, no business logic.
+ */
+
+export const <MODULE>_LIST = "/<module>";
+export const <MODULE>_DETAILS = (id: string) => `/<module>/${id}`;
+export const <MODULE>_ACTION = "/<module>/action";
+```
+
+### 2. API Class (`api/<module>.api.ts`)
+```typescript
+/**
+ * <Module> module API layer.
+ * Thin HTTP wrapper around `core/api/client` that knows only the <Module> endpoints.
+ */
+
+import { api } from "@/core/api";
+import type { ApiResponse } from "@/core/api";
+import type { <Type> } from "@/lib/types";
+import type { Create<Module>Input, Update<Module>Input, <Module>QueryParams } from "../types";
+import { <MODULE>_LIST, <MODULE>_DETAILS } from "./<module>.endpoints";
+
+export class <Module>Api {
+  static list(params?: <Module>QueryParams): Promise<ApiResponse<{ data: <Type>[]; pagination: any; stats: any }>> {
+    return api.get<{ data: <Type>[]; pagination: any; stats: any }>(<MODULE>_LIST, { params });
+  }
+
+  static get(id: string): Promise<ApiResponse<<Type>>> {
+    return api.get<<Type>>(<MODULE>_DETAILS(id));
+  }
+
+  static create(data: Create<Module>Input): Promise<ApiResponse<<Type>>> {
+    return api.post<<Type>>(<MODULE>_LIST, data);
+  }
+
+  static update(id: string, data: Update<Module>Input): Promise<ApiResponse<<Type>>> {
+    return api.put<<Type>>(<MODULE>_DETAILS(id), data);
+  }
+
+  static delete(id: string): Promise<ApiResponse<void>> {
+    return api.delete<void>(<MODULE>_DETAILS(id));
+  }
+}
+```
+
+### 3. Service Class (`services/<module>.service.ts`)
+```typescript
+/**
+ * <Module>Service — public surface of the <Module> feature module.
+ * All HTTP calls are delegated to `<Module>Api`; this service never reaches
+ * directly into the core HTTP client.
+ */
+
+import { <Module>Api } from "../api";
+import type { <Type> } from "@/lib/types";
+import type { Create<Module>Input, Update<Module>Input, <Module>QueryParams } from "../types";
+
+export class <Module>Service {
+  static async list(params?: <Module>QueryParams) {
+    const res = await <Module>Api.list(params);
+    if (!res.success) throw new Error(res.message || "Failed to fetch");
+    return res.data;
+  }
+
+  static async get(id: string): Promise<<Type> | null> {
+    const res = await <Module>Api.get(id);
+    return res.success ? res.data : null;
+  }
+
+  static async create(data: Create<Module>Input): Promise<<Type>> {
+    const res = await <Module>Api.create(data);
+    if (!res.success || !res.data) throw new Error(res.message || "Creation failed");
+    return res.data;
+  }
+
+  static async update(id: string, data: Update<Module>Input): Promise<<Type>> {
+    const res = await <Module>Api.update(id, data);
+    if (!res.success || !res.data) throw new Error(res.message || "Update failed");
+    return res.data;
+  }
+
+  static async delete(id: string): Promise<void> {
+    const res = await <Module>Api.delete(id);
+    if (!res.success) throw new Error(res.message || "Deletion failed");
+  }
+}
+```
+
+### 4. Store (`store/<module>.store.ts`)
+```typescript
+/**
+ * use<Module>Store — feature store for the <Module> module.
+ * Owns <module> state as a module-level singleton so every consumer
+ * sees the same state without requiring a Context provider in the React tree.
+ * Built on `useSyncExternalStore`.
+ */
+
+import { useCallback, useSyncExternalStore } from "react";
+import { <Module>Service } from "../services";
+import type { <Module>State, Create<Module>Input, Update<Module>Input, <Module>QueryParams } from "../types";
+import type { <Type> } from "@/lib/types";
+
+export interface <Module>StoreState extends <Module>State {
+  fetchList: (params?: <Module>QueryParams) => Promise<<Type>[]>;
+  fetchOne: (id: string) => Promise<<Type> | null>;
+  create: (data: Create<Module>Input) => Promise<<Type> | null>;
+  update: (id: string, data: Update<Module>Input) => Promise<<Type> | null>;
+  delete: (id: string) => Promise<void>;
+  setFilters: (filters: Partial<<Module>QueryParams>) => void;
+  clearError: () => void;
+}
+
+/* ── module-level singleton state ─────────────────────────────── */
+type Listener = () => void;
+const listeners = new Set<Listener>();
+const subscribe = (listener: Listener) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
+const emit = () => listeners.forEach((l) => l());
+
+let state: <Module>State = {
+  items: [],
+  selectedItem: null,
+  filters: { page: 1, limit: 10, search: "", sortBy: "", sortOrder: "asc" },
+  pagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+  loading: false,
+  error: null,
+};
+
+const patch = (next: Partial<<Module>State>) => {
+  state = { ...state, ...next };
+  emit();
+};
+
+/* ── actions (stable references) ──────────────────────────────── */
+const fetchList = async (params?: <Module>QueryParams): Promise<<Type>[]> => {
+  patch({ loading: true, error: null });
+  try {
+    const result = await <Module>Service.list(params);
+    patch({ 
+      items: result.data, 
+      pagination: result.pagination, 
+      stats: result.stats,
+      loading: false 
+    });
+    return result.data;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to fetch";
+    patch({ error: message, loading: false });
+    return [];
+  }
+};
+
+const fetchOne = async (id: string): Promise<<Type> | null> => {
+  patch({ loading: true, error: null });
+  try {
+    const item = await <Module>Service.get(id);
+    patch({ selectedItem: item, loading: false });
+    return item;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to fetch";
+    patch({ error: message, loading: false });
+    return null;
+  }
+};
+
+const create = async (data: Create<Module>Input): Promise<<Type> | null> => {
+  patch({ loading: true, error: null });
+  try {
+    const item = await <Module>Service.create(data);
+    patch({ items: [item, ...state.items], loading: false });
+    return item;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Creation failed";
+    patch({ error: message, loading: false });
+    return null;
+  }
+};
+
+const update = async (id: string, data: Update<Module>Input): Promise<<Type> | null> => {
+  patch({ loading: true, error: null });
+  try {
+    const item = await <Module>Service.update(id, data);
+    patch({ 
+      items: state.items.map((i) => (i.userId === id ? item : i)),
+      selectedItem: item,
+      loading: false 
+    });
+    return item;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Update failed";
+    patch({ error: message, loading: false });
+    return null;
+  }
+};
+
+const deleteItem = async (id: string): Promise<void> => {
+  patch({ loading: true, error: null });
+  try {
+    await <Module>Service.delete(id);
+    patch({ 
+      items: state.items.filter((i) => i.userId !== id),
+      loading: false 
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Deletion failed";
+    patch({ error: message, loading: false });
+  }
+};
+
+const setFilters = (filters: Partial<<Module>QueryParams>) => {
+  patch({ filters: { ...state.filters, ...filters } });
+};
+
+const clearError = () => patch({ error: null });
+
+/* ── selector & hook ──────────────────────────────────────────── */
+const getSnapshot = () => state;
+const getServerSnapshot = () => state;
+
+export const use<Module>Store = () => useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+/* ── typed action hooks ───────────────────────────────────────── */
+export const use<Module>Actions = () => ({
+  fetchList: useCallback(fetchList, []),
+  fetchOne: useCallback(fetchOne, []),
+  create: useCallback(create, []),
+  update: useCallback(update, []),
+  delete: useCallback(deleteItem, []),
+  setFilters: useCallback(setFilters, []),
+  clearError: useCallback(clearError, []),
+});
+```
+
+### 5. Routes (`routes.tsx`)
+```typescript
+import * as React from "react";
+import { useParams, useNavigate, type RouteObject } from "react-router-dom";
+import { PermissionGuard } from "@/router/guards/PermissionGuard";
+import { <Module>List } from "@/modules/<module>/pages/<Module>List";
+import { <Module>Details } from "@/modules/<module>/components/<Module>Details";
+import { <Module>Form } from "@/modules/<module>/components/<Module>Form";
+
+/**
+ * <Module> Route Helpers
+ */
+export const <module>RoutesConfig = {
+  list: () => "/<module>",
+  create: () => "/<module>/new",
+  details: (id: string) => `/<module>/${id}`,
+  edit: (id: string) => `/<module>/${id}/edit`,
+};
+
+const <Module>DetailsRoute: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  if (!id) return null;
+  return <Module>Details id={id} onBack={() => navigate(<module>RoutesConfig.list())} />;
+};
+
+const <Module>FormRoute: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  return <Module>Form id={id} onCancel={() => navigate(<module>RoutesConfig.list())} />;
+};
+
+/**
+ * <Module> Feature Routes
+ */
+export const <module>Routes: RouteObject[] = [
   {
-    path: "feature",
-    element: <PermissionGuard permission="pages.feature" />,
+    path: "<module>",
+    element: <PermissionGuard permission="pages.<module>" />,
     children: [
-      { index: true, element: <FeatureList /> },
-      { path: "new", element: <FeatureForm /> },
-      { path: ":id/edit", element: <FeatureForm /> },
-      { path: ":id", element: <FeatureDetails /> },
+      { index: true, element: <Module>List /> },
+      { path: "new", element: <Module>FormRoute /> },
+      { path: ":id/edit", element: <Module>FormRoute /> },
+      { path: ":id", element: <Module>DetailsRoute /> },
     ],
   },
 ];
 ```
 
-## API Layer Architecture
-
-### Core API (`@/core/api`)
-- **ApiClient**: Generic HTTP client with GET, POST, PUT, PATCH, DELETE
-- **ApiResponse<T>**: Standardized response wrapper matching backend
-- **ApiError**: Error structure
-- **Pagination**: Standard pagination metadata
-- **RequestConfig**: Request options (headers, params, timeout, signal)
-
-### Feature API Pattern
-Each feature module has its own API layer:
-```
-modules/<feature>/api/
-├── <feature>.endpoints.ts    # URL constants only
-├── <feature>.api.ts          # ApiClient wrapper with typed methods
-└── index.ts                  # Barrel export
-```
-
-### Endpoint Definitions (Frontend ↔ Backend Alignment)
-
-| Feature | Frontend Endpoint | Backend Route |
-|---------|-------------------|---------------|
-| Auth | `REGISTER = "/auth/register"` | `POST /api/v1/auth/register` |
-| Auth | `LOGIN = "/auth/login"` | `POST /api/v1/auth/login` |
-| Auth | `LOGOUT = "/auth/logout"` | `POST /api/v1/auth/logout` |
-| Auth | `SESSION = "/auth/session"` | `GET /api/v1/auth/session` |
-| Auth | `CURRENT_USER = "/auth/me"` | `GET /api/v1/auth/me` |
-| Auth | `SWITCH_USER = "/auth/switch"` | `POST /api/v1/auth/switch` |
-| Auth | `SUPER_ADMIN_PASSWORD = "/auth/super-admin-password"` | `GET /api/v1/auth/super-admin-password` |
-| Users | `USERS = "/users"` | `GET/POST /api/v1/users` |
-| Users | `USER_DETAILS(id) = \`/users/${id}\`` | `GET/PUT/PATCH/DELETE /api/v1/users/:id` |
-| Roles | `ROLES = "/roles"` | `GET/POST /api/v1/roles` |
-| Roles | `ROLE_DETAILS(id) = \`/roles/${id}\`` | `GET/PUT/PATCH/DELETE /api/v1/roles/:id` |
-| Permissions | `PERMISSIONS = "/permissions"` | `GET/POST /api/v1/permissions` |
-| Permissions | `PERMISSION_DETAILS(id) = \`/permissions/${id}\`` | `GET/PUT/PATCH/DELETE /api/v1/permissions/:id` |
-| Navigation | `NAVIGATION = "/navigation"` | `GET /api/v1/navigation` |
-
-### API Client Usage
+### 6. Main Index (`index.ts`)
 ```typescript
-// In feature API (e.g., modules/users/api/user.api.ts)
-import { api } from "@/core/api";
-import { USERS, USER_DETAILS } from "./user.endpoints";
+/**
+ * <Module> Module Barrel Export
+ * All <module>-related components, hooks, services and types.
+ */
 
-export const UserApi = {
-  list: (params?: UserQueryParams) => api.get<User[]>(USERS, { params }),
-  get: (id: string) => api.get<User>(USER_DETAILS(id)),
-  create: (data: CreateUserInput) => api.post<User>(USERS, data),
-  update: (id: string, data: UpdateUserInput) => api.put<User>(USER_DETAILS(id), data),
-  delete: (id: string) => api.delete<void>(USER_DETAILS(id)),
+export * from "./api";
+export * from "./services";
+export * from "./store";
+export * from "./hooks";
+export * from "./pages";
+export * from "./components";
+export * from "./types";
+export * from "./utils";
+```
+
+### 7. Register in Main Router (`frontend/src/router/routes.tsx`)
+```typescript
+import { <module>Routes } from "@/modules/<module>/routes";
+
+// Add to protectedFeatureRoutes array
+const protectedFeatureRoutes: RouteObject[] = [
+  // ... existing routes
+  ...<module>Routes,
+];
+```
+
+## Key Patterns to Follow
+
+### 1. API Layer Separation
+- **Endpoints**: URL constants only (`endpoints.ts`)
+- **API Class**: HTTP calls only (`api.ts`)
+- **Service Class**: Business logic, error handling, response unwrapping (`service.ts`)
+
+### 2. State Management with useSyncExternalStore
+```typescript
+// Module-level singleton (outside component)
+let state: State = { ... };
+const listeners = new Set<Listener>();
+
+// Stable action references
+const action = async () => { ... };
+
+// Hook
+export const useStore = () => useSyncExternalStore(subscribe, getSnapshot);
+export const useActions = () => ({ action: useCallback(action, []) });
+```
+
+### 3. Permission Guards on Routes
+```typescript
+import { PermissionGuard } from "@/router/guards/PermissionGuard";
+
+export const routes: RouteObject[] = [
+  {
+    path: "feature",
+    element: <PermissionGuard permission="pages.feature" />,
+    children: [...],
+  },
+];
+```
+
+### 4. Route Config Helpers
+```typescript
+export const featureRoutesConfig = {
+  list: () => "/feature",
+  create: () => "/feature/new",
+  details: (id: string) => `/feature/${id}`,
+  edit: (id: string) => `/feature/${id}/edit`,
 };
 ```
 
-## State Management
-
-### Zustand Stores (Feature-Level)
-Each feature manages its own state:
-- `modules/auth/store/` - Auth state (user, session, tokens)
-- `modules/users/store/` - User list, filters, selected user
-- `modules/roles/store/` - Role list, assignments
-- `modules/permissions/store/` - Permission list
-- `modules/navigation/store/` - Navigation tree
-
-### Global Stores (Legacy - being migrated)
-- `store/` - Root store with providers
-
-## Shared Types (`@/lib/types.ts`)
-
-### Core Domain Types
+### 5. Component Props Pattern
 ```typescript
-type Status = "active" | "inactive" | "blocked" | "pending";
-
-interface Permission {
-  id: string;
-  name: string;
-  key: string;           // e.g., "users.create"
-  module: string;        // e.g., "users"
-  description: string;
-  assignedRolesCount?: number;
-}
-
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  color: string;         // Tailwind gradient
-  permissionIds: string[];
-  createdAt: string;
-  isSystem?: boolean;
-  createdBy?: string;
-  isDefault?: boolean;
-}
-
-interface User {
-  id: string;
-  username: string;
-  userId?: string;
-  firstName: string;
-  lastName: string;
-  name: string;          // Computed: firstName + lastName
-  email: string;
-  phone: string;
-  avatar?: string;
-  roleId: string;
-  role: string;          // Role name (denormalized)
-  status: Status;
-  location: string;
-  address: string;
-  lastActive: string;
-  approvedAt?: string;
-  approvedBy?: string;
-  approvedByName?: string;
-  createdAt: string;
-  updatedAt: string;
-  bio?: string;
-  jobTitle?: string;
-  password?: string;     // Mock only
-  permissionIds?: string[];
-  isProtected?: boolean;
-}
-
-interface NavigationItem {
-  id: string;
-  title: string;
-  icon?: string;
-  route?: RouteName;
-  permission?: string;   // Required permission key
-  order: number;
-  visible: boolean;
-  children?: NavigationItem[];
-}
-
-type RouteName = 
-  | "dashboard"
-  | "users"
-  | "userDetails"
-  | "userForm"
-  | "permissions"
-  | "assignment"
-  | "logs"
-  | "settings";
-```
-
-## Permission System
-
-### Permission Keys (Must Match Backend)
-Defined in `lib/permissions.ts`:
-```typescript
-export const PERMISSIONS = {
-  // Users
-  USERS_VIEW: "users.view",
-  USERS_CREATE: "users.create",
-  USERS_EDIT: "users.edit",
-  USERS_DELETE: "users.delete",
-  USERS_RESET_PASSWORD: "users.reset_password",
-  
-  // Roles
-  ROLES_VIEW: "roles.view",
-  ROLES_CREATE: "roles.create",
-  ROLES_EDIT: "roles.edit",
-  ROLES_DELETE: "roles.delete",
-  ROLES_ASSIGN: "roles.assign",
-  
-  // Permissions
-  PERMISSIONS_VIEW: "permissions.view",
-  PERMISSIONS_CREATE: "permissions.create",
-  PERMISSIONS_EDIT: "permissions.edit",
-  PERMISSIONS_DELETE: "permissions.delete",
-  
-  // Navigation
-  NAVIGATION_VIEW: "navigation.view",
-  NAVIGATION_EDIT: "navigation.edit",
-  
-  // Pages (for route guards)
-  PAGES_DASHBOARD: "pages.dashboard",
-  PAGES_USERS: "pages.users",
-  PAGES_ROLES: "pages.roles",
-  PAGES_PERMISSIONS: "pages.permissions",
-  PAGES_ASSIGNMENT: "pages.assignment",
-  PAGES_LOGS: "pages.logs",
-  PAGES_SETTINGS: "pages.settings",
-} as const;
-```
-
-### PermissionGuard Component
-```tsx
-<PermissionGuard permission="pages.users">
-  <UserList />
-</PermissionGuard>
-```
-- Checks if current user has the required permission
-- Shows Forbidden page if not authorized
-- Integrates with auth store for user permissions
-
-## Authentication Flow
-
-### Login Flow
-1. User submits credentials → `AuthService.login()`
-2. Calls `AuthApi.login()` → `POST /api/v1/auth/login`
-3. Backend returns access token + sets refresh token cookie
-4. Frontend stores access token in memory (Zustand)
-5. Redirects to `/dashboard`
-
-### Token Refresh
-- Automatic via `apiAdapter` on 401 response
-- Calls `POST /api/v1/auth/refresh`
-- Rotates both access and refresh tokens
-
-### Logout Flow
-1. `AuthService.logout()` → `AuthApi.logout()` → `POST /api/v1/auth/logout`
-2. Backend clears refresh token cookie
-3. Frontend clears auth state
-4. Redirects to `/login`
-
-### Session Persistence
-- Access token: In-memory (Zustand store)
-- Refresh token: HttpOnly cookie (managed by backend)
-- On app load: `AuthBootstrap` calls `/auth/me` to restore session
-
-## UI Components & Layout
-
-### AdminLayout
-- Sidebar navigation (from NavigationService)
-- Top header with user menu
-- Main content area with Outlet
-- Responsive (mobile drawer)
-
-### Shared UI Components (`shared/components/`)
-- Button, Input, Select, Modal, Table, Card, Badge, Avatar, etc.
-- Built with Tailwind CSS + clsx + tailwind-merge
-
-### Permission-Gated Navigation
-- Navigation items have optional `permission` field
-- Sidebar filters items based on user permissions
-- Uses `hasPermission()` hook from auth store
-
-## Development Commands
-```bash
-npm run dev        # Start Vite dev server
-npm run build      # Production build (Vite + TypeScript)
-npm run preview    # Preview production build
-npm run lint       # ESLint
-npm run lint:fix   # ESLint with auto-fix
-```
-
-## Key Alignment Points with Backend
-
-### 1. API Base URL Configuration
-```typescript
-// In core/api/client.ts or apiAdapter.ts
-const API_BASE_URL = "/api/v1";  // Must match backend prefix
-```
-
-### 2. Response Format Matching
-```typescript
-// Frontend ApiResponse<T> matches backend exactly
-interface ApiResponse<T> {
-  success: boolean;
-  status: HttpStatus;
-  message: string;
-  data: T | null;
-  meta: ApiResponseMeta;  // Includes pagination
-  errors: ApiError[] | null;
+interface ComponentProps {
+  id?: string;
+  onBack: () => void;
+  onSubmit?: (data: FormData) => Promise<void>;
 }
 ```
 
-### 3. User Status Values
+### 6. Form Handling
 ```typescript
-// Frontend Status type matches backend exactly
-type Status = "active" | "inactive" | "blocked" | "pending";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { createSchema } from "@/modules/<module>/validations";
+
+const form = useForm<CreateInput>({
+  resolver: zodResolver(createSchema),
+  defaultValues: { field: "" },
+});
 ```
 
-### 4. Permission Keys
-- Frontend `PERMISSIONS` constants must match backend Permission `key` field
-- Used in both `PermissionGuard` and backend RBAC middleware
+### 7. Data Fetching in Components
+```typescript
+const { fetchList, items, loading, error } = use<Module>Store();
+const { fetchList: doFetch } = use<Module>Actions();
 
-### 5. Navigation Structure
-- Backend returns `NavigationItem[]` with `permission` field
-- Frontend consumes via `NavigationService` → `NavigationStore`
-- Sidebar renders based on user permissions
+useEffect(() => {
+  doFetch(filters);
+}, [doFetch, filters]);
+```
+
+## Type Definitions
+
+### Module Types (`types/index.ts`)
+```typescript
+import type { <Type> } from "@/lib/types";
+
+export interface <Module>State {
+  items: <Type>[];
+  selectedItem: <Type> | null;
+  filters: <Module>QueryParams;
+  pagination: PaginationMeta;
+  stats: StatsMeta;
+  loading: boolean;
+  error: string | null;
+}
+
+export interface Create<Module>Input {
+  field: string;
+}
+
+export interface Update<Module>Input {
+  field?: string;
+}
+
+export interface <Module>QueryParams {
+  page: number;
+  limit: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+```
+
+## Shared Code Patterns
+
+### Core API (`@/core/api`)
+```typescript
+import { api } from "@/core/api";
+
+// GET with params
+api.get<User[]>("/users", { params: { page: 1, limit: 10 } });
+
+// POST
+api.post<User>("/users", { name: "John" });
+
+// PUT
+api.put<User>("/users/123", { name: "Jane" });
+
+// DELETE
+api.delete<void>("/users/123");
+```
+
+### Permission System
+```typescript
+import { PERMISSIONS } from "@/lib/permissions";
+import { PermissionGuard } from "@/router/guards/PermissionGuard";
+import { useHasPermission } from "@/modules/auth/hooks";
+
+// In routes
+<PermissionGuard permission={PERMISSIONS.PAGES_USERS}>
+
+// In components
+const { hasPermission } = useHasPermission();
+if (hasPermission(PERMISSIONS.USERS_CREATE)) { ... }
+```
+
+### Shared UI Components
+```typescript
+import { Button, Input, Modal, Table, Card } from "@/shared/components";
+import { cn } from "@/utils/cn";
+```
+
+### Layout
+```typescript
+import { AdminLayout } from "@/shared/layouts/AdminLayout";
+import { AppProviders } from "@/shared/providers/AppProviders";
+```
+
+## Adding New Modules Checklist
+
+1. [ ] Create folder structure under `frontend/src/modules/<module>/`
+2. [ ] Create `api/`, `components/`, `hooks/`, `pages/`, `services/`, `store/`, `types/`, `utils/`
+3. [ ] Create `endpoints.ts` with URL constants
+4. [ ] Create `api.ts` with ApiClient wrapper
+5. [ ] Create `service.ts` with business logic
+6. [ ] Create `store.ts` with useSyncExternalStore
+7. [ ] Create `routes.tsx` with PermissionGuard
+8. [ ] Create page components (`List`, `Details`, `Form`)
+9. [ ] Create reusable components
+10. [ ] Define types in `types/`
+11. [ ] Create `index.ts` barrel export
+12. [ ] Register routes in `frontend/src/router/routes.tsx`
+13. [ ] Add permission constants to `lib/permissions.ts` if needed
+14. [ ] Update navigation in `modules/navigation/` if needed
+
+## Common Mistakes to Avoid
+
+1. ❌ Putting HTTP calls directly in components
+2. ❌ Using useState/useContext for module state (use useSyncExternalStore)
+3. ❌ Not unwrapping API responses in Service layer
+4. ❌ Forgetting PermissionGuard on protected routes
+5. ❌ Not exporting from module index.ts
+6. ❌ Hardcoding URLs instead of using endpoints constants
+7. ❌ Not handling loading/error states in UI
+8. ❌ Using `any` type instead of proper TypeScript types
+9. ❌ Forgetting to register routes in main router
+10. ❌ Not aligning permission keys with backend
+
+## Testing Checklist for New Modules
+- [ ] Unit tests for services
+- [ ] Component tests for pages/forms
+- [ ] Store action tests
+- [ ] Route guard tests
+- [ ] Permission integration tests
 
 ### 6. Date Format
 - Backend: ISO 8601 strings (Date.toISOString())

@@ -73,7 +73,7 @@ export class UserService {
     return UserApi.deleteUser(id);
   }
 
-  static resetUserPassword(id: string, password: string) {
-    return UserApi.resetUserPassword(id, password);
+  static resetUserPassword(id: string, password: string, confirmPassword: string) {
+    return UserApi.resetUserPassword(id, password, confirmPassword);
   }
 }

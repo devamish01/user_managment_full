@@ -14,6 +14,7 @@ export interface TransactionStatCardProps {
   gradient: string;
   active: boolean;
   onClick: () => void;
+  subtitle?: string;
 }
 
 export const TransactionStatCard: React.FC<TransactionStatCardProps> = ({
@@ -23,6 +24,7 @@ export const TransactionStatCard: React.FC<TransactionStatCardProps> = ({
   gradient,
   active,
   onClick,
+  subtitle,
 }) => (
   <button
     type="button"
@@ -57,6 +59,9 @@ export const TransactionStatCard: React.FC<TransactionStatCardProps> = ({
       <p className="text-2xl font-bold leading-none tracking-tight tabular-nums">{count}</p>
       <div className="mt-1 flex items-center gap-2">
         <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
+        {subtitle && (
+          <span className="truncate text-xs text-muted-foreground">{subtitle}</span>
+        )}
         {active && (
           <span className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
             filtering

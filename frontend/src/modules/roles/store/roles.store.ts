@@ -5,16 +5,23 @@ import * as React from "react";
 import type { Role } from "@/lib/types";
 import { RoleService } from "../services";
 import type { GenericQueryParams } from "@/api";
+import { getErrorMessage } from "@/core/api/errorUtils";
+import type { ApiResponse } from "@/core/api/types";
+
+export interface DeleteRoleResponse {
+  ok: boolean;
+  reassignedCount: number;
+}
 
 export interface RolesStoreState {
   roles: Role[];
   loading: boolean;
   error: string | null;
   getRoles: (params?: GenericQueryParams) => Promise<void>;
-  createRole: (data: Omit<Role, "id" | "createdAt">) => Promise<void>;
-  updateRole: (id: string, data: Partial<Role>) => Promise<void>;
-  deleteRole: (id: string) => Promise<{ reassignedCount: number }>;
-  updateRolePermissions: (id: string, permissionIds: string[]) => Promise<void>;
+  createRole: (data: Omit<Role, "id" | "createdAt">) => Promise<ApiResponse<Role>>;
+  updateRole: (id: string, data: Partial<Role>) => Promise<ApiResponse<Role>>;
+  deleteRole: (id: string) => Promise<ApiResponse<DeleteRoleResponse>>;
+  updateRolePermissions: (id: string, permissionIds: string[]) => Promise<ApiResponse<Role>>;
 }
 
 export const useRolesStore = (): RolesStoreState => {
@@ -30,7 +37,7 @@ export const useRolesStore = (): RolesStoreState => {
       if (res.success && res.data) setRoles(res.data);
       else setError(res.message || "Failed to load roles");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load roles");
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -47,8 +54,11 @@ export const useRolesStore = (): RolesStoreState => {
   const createRole = React.useCallback(
     async (data: Omit<Role, "id" | "createdAt">) => {
       const res = await RoleService.createRole(data);
-      if (res.success) await refresh();
-      else throw new Error(res.message);
+   if (res.success) {
+      await refresh();
+      return res;
+    }
+      else throw res;
     },
     [refresh],
   );
@@ -56,18 +66,23 @@ export const useRolesStore = (): RolesStoreState => {
   const updateRole = React.useCallback(
     async (id: string, data: Partial<Role>) => {
       const res = await RoleService.updateRole(id, data);
-      if (res.success) await refresh();
-      else throw new Error(res.message);
+    if (res.success) {
+      await refresh();
+      return res;
+    }
+      else throw res;
     },
     [refresh],
   );
 
   const updateRolePermissions = React.useCallback(
     async (id: string, permissionIds: string[]) => {
-      
       const res = await RoleService.updateRolePermissions(id, permissionIds);
-      if (res.success) await refresh();
-      else throw new Error(res.message);
+   if (res.success) {
+      await refresh();
+      return res;
+    }
+      else throw res;
     },
     [refresh],
   );
@@ -75,11 +90,12 @@ export const useRolesStore = (): RolesStoreState => {
   const deleteRole = React.useCallback(
     async (id: string) => {
       const res = await RoleService.deleteRole(id);
+      console.log('result',res)
       if (res.success) {
         await refresh();
-        return { reassignedCount: res.data?.reassignedCount || 0 };
+        return res;
       }
-      else throw new Error(res.message);
+      else throw res;
     },
     [refresh],
   );

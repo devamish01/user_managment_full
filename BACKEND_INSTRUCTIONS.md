@@ -1,102 +1,449 @@
-# Backend Architecture & API Documentation
+# Backend Development Instructions
 
-## Project Overview
-**Nexus Backend** - Production-ready modular backend built with Node.js, Express, TypeScript, and MongoDB.
+## Module Structure Template
 
-## Tech Stack
-- **Runtime**: Node.js >= 22.0.0 (ES Modules)
-- **Framework**: Express 5.x
-- **Database**: MongoDB with Mongoose 9.x
-- **Language**: TypeScript 5.x (strict mode)
-- **Validation**: Zod 4.x
-- **Auth**: JWT (jsonwebtoken), bcrypt 6.x
-- **Logging**: Pino + pino-http + pino-pretty
-- **Security**: Helmet, CORS, express-rate-limit
-- **Config**: dotenv + envalid
-
-## Project Structure
 ```
-backend/
-├── src/
-│   ├── server.ts              # Entry point - DB connection, seeding, server start
-│   ├── app.ts                 # Express app setup, middleware, routes
-│   ├── config/
-│   │   ├── env.ts             # Validated environment variables
-│   │   └── index.ts           # Config barrel export
-│   ├── core/
-│   │   ├── index.ts           # Core barrel
-│   │   └── database/
-│   │       ├── index.ts       # Database barrel
-│   │       └── mongoose.ts    # Mongoose connection logic
-│   ├── modules/               # Feature modules (domain-driven)
-│   │   ├── auth/              # Authentication & authorization
-│   │   ├── health/            # Health check endpoint
-│   │   ├── navigation/        # Navigation menu management
-│   │   ├── permissions/       # Permission CRUD & registry
-│   │   ├── roles/             # Role CRUD & assignment
-│   │   ├── sessions/          # Session management
-│   │   └── users/             # User CRUD & management
-│   ├── routes/
-│   │   ├── index.ts           # Main router aggregator
-│   │   └── README.md
-│   ├── shared/                # Cross-cutting concerns
-│   │   ├── constants/
-│   │   ├── database/
-│   │   ├── errors/
-│   │   ├── logger/
-│   │   ├── middlewares/
-│   │   ├── module-metadata/
-│   │   ├── response/
-│   │   ├── types/
-│   │   └── utils/
-│   └── types/                 # Global types
-├── package.json
-├── tsconfig.json
-└── ROADMAP.md
+backend/src/modules/<module-name>/
+├── constants/
+│   ├── index.ts          # Barrel export
+│   └── messages.ts       # SUCCESS_MESSAGES, ERROR_MESSAGES
+├── controllers/
+│   ├── index.ts          # Barrel export
+│   └── <action>.controller.ts
+├── services/
+│   ├── index.ts          # Barrel export
+│   └── <action>.service.ts
+├── model/
+│   ├── index.ts          # Mongoose model export
+│   └── <module>.type.ts  # TypeScript interface
+├── routes/
+│   ├── index.ts          # Barrel export
+│   └── <module>.route.ts # Express router
+├── types/
+│   ├── index.ts          # Barrel export
+│   └── <type>.type.ts    # Request/Response types
+├── utils/
+│   ├── index.ts          # Barrel export
+│   └── <utility>.ts
+├── validations/
+│   ├── index.ts          # Barrel export
+│   └── <schema>.schema.ts # Zod schemas
+└── index.ts              # Main barrel export
 ```
 
-## API Endpoints (Base: `/api/v1`)
+## Required Files for Every Module
 
-### Auth Module (`/auth`)
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/` | Auth status check | Public |
-| POST | `/register` | User registration | Public |
-| POST | `/login` | User login | Public |
-| POST | `/refresh` | Refresh access token | Public |
-| POST | `/logout` | User logout | Required |
-| GET | `/me` | Current user profile | Required |
-| GET | `/session` | Current session info | Required |
+### 1. Constants (`constants/messages.ts`)
+```typescript
+export const MODULE_MESSAGES = {
+  MODULE_RUNNING: "<Module> module is running",
+  FETCH_SUCCESS: "<Resource> fetched successfully",
+  FETCH_ONE_SUCCESS: "<Resource> fetched successfully",
+  CREATE_SUCCESS: "<Resource> created successfully",
+  UPDATE_SUCCESS: "<Resource> updated successfully",
+  DELETE_SUCCESS: "<Resource> deleted successfully",
+  NOT_FOUND: "<Resource> not found",
+  ALREADY_EXISTS: "<Resource> already exists",
+} as const;
 
-### Users Module (`/users`)
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/` | List users (paginated, filterable) | Required |
-| POST | `/` | Create user | Required |
-| GET | `/:id` | Get user by ID | Required |
-| PUT | `/:id` | Update user (full) | Required |
-| PATCH | `/:id` | Update user (partial) | Required |
-| DELETE | `/:id` | Delete user | Required |
-| POST | `/:id/reset-password` | Reset user password | Required |
+export const MODULE_ERRORS = {
+  INVALID_INPUT: "Invalid input provided",
+  UNAUTHORIZED: "Unauthorized access",
+  FORBIDDEN: "Access forbidden",
+} as const;
+```
 
-### Roles Module (`/roles`)
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/` | List roles (paginated, filterable) | Required |
-| POST | `/` | Create role | Required |
-| PUT | `/:id` | Update role (full) | Required |
-| PATCH | `/:id` | Update role (partial) | Required |
-| DELETE | `/:id` | Delete role | Required |
+### 2. Model (`model/index.ts`)
+```typescript
+import mongoose, { Document, Schema } from "mongoose";
 
-### Permissions Module (`/permissions`)
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| GET | `/` | List permissions (paginated, filterable) | Required |
-| GET | `/:id` | Get permission by ID | Required |
-| POST | `/` | Create permission | Required |
-| PUT | `/:id` | Update permission (full) | Required |
-| PATCH | `/:id` | Update permission (partial) | Required |
-| DELETE | `/:id` | Delete permission | Required |
+export interface I<Module> extends Document {
+  <field>: <type>;
+  // Always include:
+  userId: string;  // Primary identifier (not _id)
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const <Module>Schema = new Schema<I<Module>>(
+  {
+    userId: { type: String, required: true, unique: true, index: true },
+    // ... other fields
+  },
+  { timestamps: true }
+);
+
+export const <Module> = mongoose.model<I<Module>>("<Module>", <Module>Schema);
+```
+
+### 3. Validations (`validations/<schema>.schema.ts`)
+```typescript
+import { z } from "zod";
+
+export const create<Module>Schema = z.object({
+  body: z.object({
+    field: z.string().min(1, "Field is required"),
+  }),
+});
+
+export const update<Module>Schema = z.object({
+  body: z.object({
+    field: z.string().optional(),
+  }),
+  params: z.object({
+    id: z.string().min(1, "ID is required"),
+  }),
+});
+
+export const <module>QuerySchema = z.object({
+  query: z.object({
+    page: z.coerce.number().int().positive().default(1),
+    limit: z.coerce.number().int().positive().max(100).default(10),
+    search: z.string().optional(),
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(["asc", "desc"]).optional(),
+  }),
+});
+
+export type Create<Module>Input = z.infer<typeof create<Module>Schema>["body"];
+export type Update<Module>Input = z.infer<typeof update<Module>Schema>["body"];
+export type <Module>QueryParams = z.infer<typeof <module>QuerySchema>["query"];
+```
+
+### 4. Services (`services/<action>.service.ts`)
+```typescript
+import { <Module> } from "@/modules/<module>/model/index.js";
+import { MODULE_MESSAGES, MODULE_ERRORS } from "@/modules/<module>/constants/index.js";
+import { HTTP_STATUS } from "@/shared/constants/http-status.js";
+import { AppError } from "@/shared/errors/index.js";
+import type { Create<Module>Input, Update<Module>Input, <Module>QueryParams } from "@/modules/<module>/validations/index.js";
+
+export const create<Module> = async (data: Create<Module>Input, userId?: string) => {
+  // Check duplicates
+  const existing = await <Module>.findOne({ field: data.field });
+  if (existing) {
+    throw new AppError({
+      message: MODULE_ERRORS.ALREADY_EXISTS,
+      statusCode: HTTP_STATUS.CONFLICT,
+      errorCode: "ALREADY_EXISTS",
+    });
+  }
+
+  const <module> = await <Module>.create({ ...data, userId });
+  return <module>;
+};
+
+export const get<Module>s = async (query: <Module>QueryParams) => {
+  const { page = 1, limit = 10, search, sortBy, sortOrder } = query;
+  const skip = (page - 1) * limit;
+
+  const filter: any = {};
+  if (search) {
+    filter.$or = [{ field: { $regex: search, $options: "i" } }];
+  }
+
+  const sort: any = {};
+  if (sortBy) sort[sortBy] = sortOrder === "desc" ? -1 : 1;
+
+  const [data, total] = await Promise.all([
+    <Module>.find(filter).sort(sort).skip(skip).limit(limit),
+    <Module>.countDocuments(filter),
+  ]);
+
+  return {
+    data,
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    stats: { total },
+  };
+};
+
+export const get<Module>ById = async (id: string) => {
+  const <module> = await <Module>.findOne({ userId: id });
+  if (!<module>) {
+    throw new AppError({
+      message: MODULE_ERRORS.NOT_FOUND,
+      statusCode: HTTP_STATUS.NOT_FOUND,
+      errorCode: "NOT_FOUND",
+    });
+  }
+  return <module>;
+};
+
+export const update<Module> = async (id: string, data: Update<Module>Input, userId?: string, userRole?: string) => {
+  const <module> = await get<Module>ById(id);
+  
+  // Authorization check
+  if (userRole !== "super-admin" && <module>.userId !== userId) {
+    throw new AppError({
+      message: MODULE_ERRORS.FORBIDDEN,
+      statusCode: HTTP_STATUS.FORBIDDEN,
+      errorCode: "FORBIDDEN",
+    });
+  }
+
+  Object.assign(<module>, data);
+  await <module>.save();
+  return <module>;
+};
+
+export const delete<Module> = async (id: string, userRole?: string) => {
+  const <module> = await get<Module>ById(id);
+  
+  if (userRole !== "super-admin") {
+    throw new AppError({
+      message: MODULE_ERRORS.FORBIDDEN,
+      statusCode: HTTP_STATUS.FORBIDDEN,
+      errorCode: "FORBIDDEN",
+    });
+  }
+
+  await <module>.deleteOne();
+  return { ok: true };
+};
+```
+
+### 5. Controllers (`controllers/<action>.controller.ts`)
+```typescript
+import type { Request, Response } from "express";
+import type { AuthRequest } from "@/shared/middlewares/auth.middleware.js";
+import { successResponse, createdResponse } from "@/shared/response/index.js";
+import { MODULE_MESSAGES } from "@/modules/<module>/constants/index.js";
+import { asyncHandler } from "@/shared/middlewares/index.js";
+import { create<Module>, get<Module>s, get<Module>ById, update<Module>, delete<Module> } from "@/modules/<module>/services/index.js";
+import { create<Module>Schema, update<Module>Schema, <module>QuerySchema } from "@/modules/<module>/validations/index.js";
+import type { I<Module> } from "@/modules/<module>/model/index.js";
+
+export const get<Module>sController = asyncHandler(
+  async (req: Request, res: Response): Promise<Response> => {
+    const result = await get<Module>s(req.query as any);
+    return successResponse<I<Module>[]>({
+      res,
+      message: MODULE_MESSAGES.FETCH_SUCCESS,
+      data: result.data,
+      meta: { pagination: result.pagination, stats: result.stats },
+    });
+  },
+);
+
+export const get<Module>ByIdController = asyncHandler(
+  async (req: Request, res: Response): Promise<Response> => {
+    const <module> = await get<Module>ById(req.params.id as string);
+    return successResponse<I<Module>>({
+      res,
+      message: MODULE_MESSAGES.FETCH_ONE_SUCCESS,
+      data: <module>,
+    });
+  },
+);
+
+export const create<Module>Controller = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<Response> => {
+    const <module> = await create<Module>(req.body, req.user?.userId);
+    return createdResponse<I<Module>>({
+      res,
+      message: MODULE_MESSAGES.CREATE_SUCCESS,
+      data: <module>,
+    });
+  },
+);
+
+export const update<Module>Controller = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<Response> => {
+    const <module> = await update<Module>(req.params.id as string, req.body, req.user?.userId, req.user?.role);
+    return successResponse<I<Module>>({
+      res,
+      message: MODULE_MESSAGES.UPDATE_SUCCESS,
+      data: <module>,
+    });
+  },
+);
+
+export const delete<Module>Controller = asyncHandler(
+  async (req: AuthRequest, res: Response): Promise<Response> => {
+    await delete<Module>(req.params.id as string, req.user?.role);
+    return successResponse({
+      res,
+      message: MODULE_MESSAGES.DELETE_SUCCESS,
+      data: { ok: true },
+    });
+  },
+);
+```
+
+### 6. Routes (`routes/<module>.route.ts`)
+```typescript
+import { Router } from "express";
+import {
+  get<Module>sController,
+  get<Module>ByIdController,
+  create<Module>Controller,
+  update<Module>Controller,
+  delete<Module>Controller,
+} from "@/modules/<module>/controllers/index.js";
+import { validate } from "@/shared/middlewares/validate.middleware.js";
+import { authMiddleware } from "@/shared/middlewares/index.js";
+import { create<Module>Schema, update<Module>Schema, <module>QuerySchema } from "@/modules/<module>/validations/index.js";
+
+export const <module>Routes = Router();
+
+// All routes require authentication
+<module>Routes.use(authMiddleware);
+
+<module>Routes.get(
+  "/",
+  validate({ query: <module>QuerySchema }),
+  get<Module>sController,
+);
+
+<module>Routes.post(
+  "/",
+  validate({ body: create<Module>Schema }),
+  create<Module>Controller,
+);
+
+<module>Routes.get(
+  "/:id",
+  get<Module>ByIdController,
+);
+
+<module>Routes.put(
+  "/:id",
+  validate({ body: update<Module>Schema }),
+  update<Module>Controller,
+);
+
+<module>Routes.patch(
+  "/:id",
+  validate({ body: update<Module>Schema }),
+  update<Module>Controller,
+);
+
+<module>Routes.delete(
+  "/:id",
+  delete<Module>Controller,
+);
+```
+
+### 7. Main Index (`index.ts`)
+```typescript
+export * from "./constants/index.js";
+export * from "./controllers/index.js";
+export * from "./services/index.js";
+export * from "./model/index.js";
+export * from "./model/<module>.type.js";
+export * from "./validations/index.js";
+export * from "./routes/<module>.route.js";
+```
+
+### 8. Register in Main Routes (`backend/src/routes/index.ts`)
+```typescript
+import { <module>Routes } from "@/modules/<module>/routes/index.js";
+
+// Add to routes
+routes.use("/<module>", <module>Routes);
+```
+
+## Key Patterns to Follow
+
+### 1. Always Use asyncHandler
+```typescript
+import { asyncHandler } from "@/shared/middlewares/index.js";
+
+export const myController = asyncHandler(async (req, res) => {
+  // No try-catch needed
+});
+```
+
+### 2. Use Standardized Responses
+```typescript
+import { successResponse, createdResponse, errorResponse } from "@/shared/response/index.js";
+
+return successResponse({ res, message: "Success", data });
+return createdResponse({ res, message: "Created", data });
+return errorResponse({ res, message: "Error", statusCode: 400 });
+```
+
+### 3. Throw AppError for Errors
+```typescript
+import { AppError } from "@/shared/errors/index.js";
+import { HTTP_STATUS } from "@/shared/constants/http-status.js";
+
+throw new AppError({
+  message: "Error message",
+  statusCode: HTTP_STATUS.BAD_REQUEST,
+  errorCode: "ERROR_CODE",
+  details: { field: "value" }, // optional
+});
+```
+
+### 4. Use validate Middleware
+```typescript
+import { validate } from "@/shared/middlewares/validate.middleware.js";
+import { mySchema } from "@/modules/<module>/validations/index.js";
+
+router.post("/", validate({ body: mySchema }), controller);
+router.get("/", validate({ query: querySchema }), controller);
+```
+
+### 5. Use Auth Middleware for Protected Routes
+```typescript
+import { authMiddleware } from "@/shared/middlewares/index.js";
+
+router.use(authMiddleware); // Apply to all routes
+// OR
+router.get("/:id", authMiddleware, controller); // Apply to specific route
+```
+
+### 6. Type AuthRequest for Authenticated Routes
+```typescript
+import type { AuthRequest } from "@/shared/middlewares/auth.middleware.js";
+
+export const myController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.userId; // TypeScript knows this exists
+    const role = req.user?.role;
+  }
+);
+```
+
+## Database Patterns
+
+### Query Building
+```typescript
+const filter: any = {};
+if (search) filter.$or = [{ name: { $regex: search, $options: "i" } }];
+if (status) filter.status = status;
+
+const sort: any = {};
+if (sortBy) sort[sortBy] = sortOrder === "desc" ? -1 : 1;
+
+const data = await Model.find(filter).sort(sort).skip(skip).limit(limit);
+const total = await Model.countDocuments(filter);
+```
+
+### Population
+```typescript
+const data = await Model.find(filter)
+  .populate("roleId", "name")
+  .populate("createdBy", "username");
+```
+
+## Testing Checklist for New Modules
+- [ ] Unit tests for services
+- [ ] Integration tests for controllers
+- [ ] Validation schema tests
+- [ ] Error handling tests
+- [ ] Authorization tests
+
+## Common Mistakes to Avoid
+1. ❌ Putting business logic in controllers
+2. ❌ Not using asyncHandler (unhandled promise rejections)
+3. ❌ Using res.json() directly instead of response helpers
+4. ❌ Throwing plain Error instead of AppError
+5. ❌ Forgetting validate middleware
+6. ❌ Not exporting from module index.ts
+7. ❌ Using _id instead of userId
+8. ❌ Not registering routes in main routes/index.ts
 
 ### Navigation Module (`/navigation`)
 | Method | Endpoint | Description | Auth |

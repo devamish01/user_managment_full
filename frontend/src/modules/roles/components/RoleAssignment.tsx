@@ -6,7 +6,7 @@ import React from "react";
 import { Shield, Save, Lock, Eye, ShieldCheck, Info, Plus, Pencil, Trash2, LayoutGrid, List } from "lucide-react";
 import { useStore, isSuperAdmin } from "@/store";
 import useRolesStore from "../store/roles.store";
-import { useToast } from "@/components/ui/toast";
+import { useToastError } from "@/core/api/toastUtils";
 import { SharedButton, SharedBadge, SharedModal, SharedInput, ErrorState } from "@/shared/components";
 import { Card, CardContent, CardHeader, CardTitle, Label, Switch, Textarea, Tabs } from "@/components/ui";
 import { RolesSkeleton } from "./RolesSkeleton";
@@ -71,7 +71,7 @@ const ModulePermsCard = ({ moduleName, perms, uiPerms, localPerms, toggle, locke
 export const RoleAssignment = () => {
   const { permissions } = useStore();
   const { roles, loading, error, getRoles, createRole, updateRole, deleteRole, updateRolePermissions } = useRolesStore();
-  const { toast } = useToast();
+  const { toastError, toastSuccess } = useToastError();
   const [view, setView] = React.useState<"card" | "list">("card");
   const [selectedRoleId, setSelectedRoleId] = React.useState<string>("");
   const role = roles.find(r => r.id === selectedRoleId);
@@ -101,35 +101,49 @@ export const RoleAssignment = () => {
   const toggle = (pid: string) => { if (!locked) { setLocalPerms(prev => prev.includes(pid) ? prev.filter(x => x !== pid) : [...prev, pid]); setDirty(true); } };
 
   const save = async () => {
-    try { await updateRolePermissions(role!.id, localPerms); toast({ type: "success", title: "Permissions saved" }); setDirty(false); }
-    catch (e: any) { toast({ type: "error", title: "Error", description: e.message }); }
+    try { 
+      const res = await updateRolePermissions(role!.id, localPerms); 
+      toastSuccess(res); 
+      setDirty(false); 
+    }
+    catch (e: any) { toastError(e, { title: "Error" }); }
   };
 
   const handleCreate = async () => {
-    try { await createRole({ ...formState, permissionIds: [] }); toast({ type: "success", title: "Role created" }); setCreateOpen(false); }
-    catch (e: any) { toast({ type: "error", title: "Error", description: e.message }); }
+    try { 
+      const res = await createRole({ ...formState, permissionIds: [] }); 
+      toastSuccess(res); 
+      setCreateOpen(false); 
+    }
+    catch (e: any) { toastError(e, { title: "Error" }); }
   };
 
   const handleEdit = async () => {
-    try { await updateRole(editRoleObj!.id, formState); toast({ type: "success", title: "Role updated" }); setEditRoleObj(null); }
-    catch (e: any) { toast({ type: "error", title: "Error", description: e.message }); }
+    try { 
+      const res = await updateRole(editRoleObj!.id, formState); 
+      toastSuccess(res); 
+      setEditRoleObj(null); 
+    }
+    catch (e: any) { toastError(e, { title: "Error" }); }
   };
 
   const handleDelete = async () => {
     try { 
       const result = await deleteRole(deleteRoleObj!.id); 
-      if (result.reassignedCount > 0) {
-        toast({ type: "success", title: "Role deleted", description: `${result.reassignedCount} user(s) moved to Default Viewer` });
+      console.log('result',result)
+      const reassignedCount = result.data?.reassignedCount || 0;
+      if (reassignedCount > 0) {
+        toastSuccess({ success: true, message: `Role deleted. ${reassignedCount} user(s) moved to Default Viewer` });
       } else {
-        toast({ type: "success", title: "Role deleted" }); 
+        toastSuccess({ success: true, message: "Role deleted" }); 
       }
       setDeleteRoleObj(null); 
     }
     catch (e: any) { 
       if (e.errorCode === "SYSTEM_ROLE_DELETE_NOT_ALLOWED") {
-        toast({ type: "error", title: "Error", description: "System roles cannot be deleted." });
+        toastError({ errorCode: "SYSTEM_ROLE_DELETE_NOT_ALLOWED", message: "System roles cannot be deleted." }, { title: "Error" });
       } else {
-        toast({ type: "error", title: "Error", description: e.message }); 
+        toastError(e, { title: "Error" }); 
       }
     }
   };
