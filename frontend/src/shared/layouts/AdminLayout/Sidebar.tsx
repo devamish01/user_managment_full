@@ -32,6 +32,7 @@ import { EmptyState, ErrorState } from "@/shared/components/states";
 import { Inbox } from "lucide-react";
 /** Route-name → path resolver that replaces the removed routeMapping layer. */
 const routeNameToPath: Record<string, string> = {
+  home:        "/home",
   dashboard:   "/dashboard",
   users:       "/users",
   permissions: "/permissions",
@@ -44,6 +45,7 @@ const routeNameToPath: Record<string, string> = {
 
 /** Maps backend icon identifiers to the existing visual icon set. */
 const navigationIcons: Record<string, React.ReactNode> = {
+  home: <LayoutDashboard size={18} />,
   "layout-dashboard": <LayoutDashboard size={18} />,
   users: <Users size={18} />,
   "toggle-right": <ToggleRight size={18} />,
@@ -78,8 +80,22 @@ export const Sidebar = ({ open, onClose }: { open: boolean; onClose: () => void 
   const isActive = (name?: string) => isRouteActive(name, location.pathname);
   const currentRole = roles.find((r) => r.id === currentRoleId);
 
+  // Home is a global navigation item - always visible at the top
+  const homeNavItem = navigation.find((item) => item.id === "nav-home");
+  const homeSection = homeNavItem ? {
+    id: "nav-home-section",
+    title: "Global",
+    order: -1,
+    visible: true,
+    children: [{
+      ...homeNavItem,
+      // Home bypasses permission check - always visible
+      permission: undefined,
+    }],
+  } : null;
+
   const visibleNav = navigation
-    .filter((section) => section.visible)
+    .filter((section) => section.visible && section.id !== "nav-home")
     .sort((a, b) => a.order - b.order)
     .map((section) => ({
       ...section,
@@ -88,6 +104,9 @@ export const Sidebar = ({ open, onClose }: { open: boolean; onClose: () => void 
         .sort((a, b) => a.order - b.order),
     }))
     .filter((section) => section.children.length > 0);
+
+  // Prepend Home section if it exists
+  const finalNav = homeSection ? [homeSection, ...visibleNav] : visibleNav;
 
   return (
     <>
@@ -145,7 +164,7 @@ export const Sidebar = ({ open, onClose }: { open: boolean; onClose: () => void 
                 className="border-0 bg-transparent p-4"
               />
             </div>
-          ) : visibleNav.map((section) => (
+          ) : finalNav.map((section) => (
             <div key={section.id} className="mb-5">
               <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {section.title}

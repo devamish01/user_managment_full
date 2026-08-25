@@ -55,7 +55,7 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
       setCategory(payment.category);
       setPaymentMethod(payment.paymentMethod);
       setPaymentSource(payment.paymentSource);
-      setUtrNumber(payment.utrNumber === "—" ? "" : payment.utrNumber);
+      setUtrNumber(payment.utrNumber);
       setPaymentDate(payment.paymentDate ? payment.paymentDate.split("T")[0] : "");
       setNotes(payment.notes || "");
       setFileName(payment.screenshotUrl ? "Existing_Screenshot.png" : null);

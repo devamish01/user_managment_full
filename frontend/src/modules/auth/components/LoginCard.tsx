@@ -1,13 +1,13 @@
 /**
- * LoginCard — the paper-side panel that hosts the sign-in form.
+ * LoginCard — modern card for the sign-in form.
  *
- * A single sand-toned card with editorial typographic rhythm. No blur, no
- * aurora, no rounded-3xl — just a tight rectangle with a bold number tag
- * and a hairline rule.
+ * Matches the home page design language with clean cards,
+ * consistent theme colors, and modern styling.
  */
 
 import * as React from "react";
 import { LoginForm } from "./LoginForm";
+import { cn } from "@/utils/cn";
 
 export interface LoginCardProps {
   edition?: string;
@@ -15,23 +15,27 @@ export interface LoginCardProps {
 }
 
 export const LoginCard: React.FC<LoginCardProps> = ({
-  edition = "No. 001",
-  footnote = "Need access? Request it from your workspace administrator.",
+  edition = "v2.0",
+  footnote = "Need access? Contact your workspace administrator.",
 }) => (
-  <div className="relative flex h-full flex-col justify-between bg-[#f4ede0] p-8 sm:p-12">
-    <div className="flex items-baseline justify-between text-[11px] uppercase tracking-[0.22em] text-[#0e1418]/55">
-      <span>Sign-in · {edition}</span>
-      <span>Mock identity</span>
+  <div className={cn(
+    "relative flex h-full flex-col justify-between",
+    "bg-card border border-border rounded-2xl p-8 sm:p-10 lg:p-12",
+    "shadow-xl"
+  )}>
+    <div className="flex items-baseline justify-between text-xs uppercase tracking-wider text-muted-foreground mb-8">
+      <span>{edition}</span>
+      <span>Secure Access</span>
     </div>
 
-    <div className="py-8">
-      <p className="mb-6 font-serif text-base italic text-[#0e1418]/70">
-        “Access, granted with intent.”
+    <div className="py-4 space-y-6">
+      <p className="mb-2 text-base italic text-muted-foreground text-center">
+        "Access, granted with intent."
       </p>
       <LoginForm />
     </div>
 
-    <p className="border-t border-[#0e1418]/10 pt-5 text-[11px] uppercase tracking-[0.22em] text-[#0e1418]/55">
+    <p className="border-t border-border pt-5 text-xs uppercase tracking-wider text-muted-foreground text-center">
       {footnote}
     </p>
   </div>

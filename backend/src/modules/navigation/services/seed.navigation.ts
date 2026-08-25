@@ -4,6 +4,16 @@ import type { NavigationItem } from "@/modules/navigation/index.js";
 /** Default navigation structure matching frontend mock */
 export const DEFAULT_NAVIGATION: NavigationItem[] = [
   {
+    id: "nav-home",
+    title: "Home",
+    order: 0,
+    visible: true,
+    icon: "home",
+    route: "home",
+    permission: "home.view",
+    children: [],
+  },
+  {
     id: "nav-overview",
     title: "Overview",
     order: 1,

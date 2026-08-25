@@ -8,9 +8,9 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch src/entry.ts",
     "build": "tsc && tsc-alias",
-    "start": "node dist/server.js",
+    "start": "node dist/entry.js",
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write ."

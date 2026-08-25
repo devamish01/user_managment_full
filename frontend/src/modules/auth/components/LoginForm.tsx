@@ -16,7 +16,7 @@ import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Loader2, Copy } from "lucide-react";
 import { SharedInput, SharedButton } from "@/shared/components";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@/utils/cn";
 import { useAuth } from "../hooks";
 import { UserSwitcher } from "./UserSwitcher";
 import { DEMO_ACCOUNTS, ROLE_DISPLAY } from "@/core/authorization";
@@ -84,31 +84,31 @@ export const LoginForm: React.FC = () => {
   const submitDisabled = loading || !email.trim() || !password;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-7">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <UserSwitcher
         selectedRoleId={roleId}
         onSelect={applySelection}
         disabled={loading}
       />
 
-      <div className="space-y-4">
+      <div className="space-y-5">
         <label className="block space-y-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0e1418]/55">
+          <span className="text-sm font-medium text-foreground">
             Email
           </span>
           <SharedInput
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="superadmin@nexus.com"
+            placeholder="you@example.com"
             disabled={loading}
             autoComplete="email"
-            className="h-11 border-[#0e1418]/15 bg-white text-[#0e1418] focus-visible:ring-[#0e1418]/30"
+            className="h-11 border-border bg-background text-foreground focus-visible:ring-primary/30"
           />
         </label>
 
         <label className="block space-y-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0e1418]/55">
+          <span className="text-sm font-medium text-foreground">
             Password
           </span>
           <SharedInput
@@ -118,16 +118,16 @@ export const LoginForm: React.FC = () => {
             placeholder="••••••••"
             disabled={loading}
             autoComplete="current-password"
-            className="h-11 border-[#0e1418]/15 bg-white text-[#0e1418] focus-visible:ring-[#0e1418]/30"
+            className="h-11 border-border bg-background text-foreground focus-visible:ring-primary/30"
           />
         </label>
 
-        <label className="flex cursor-pointer items-center gap-2 text-xs text-[#0e1418]/70">
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground">
           <input
             type="checkbox"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
-            className="h-4 w-4 accent-[#0a7f5e]"
+            className="h-4 w-4 accent-primary"
           />
           Keep me signed in on this device
         </label>
@@ -136,7 +136,7 @@ export const LoginForm: React.FC = () => {
       {error && (
         <p
           role="alert"
-          className="rounded-md border border-red-500/30 bg-red-500/5 px-3 py-2 text-xs text-red-600"
+          className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
         >
           {error}
         </p>
@@ -145,9 +145,9 @@ export const LoginForm: React.FC = () => {
       {isAuthenticated && currentUser && (
         <p
           role="status"
-          className="flex items-center gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-700"
+          className="flex items-center gap-2 rounded-md border border-success/30 bg-success/5 px-3 py-2 text-sm text-success"
         >
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-success" />
           Signed in as <span className="font-semibold">{currentUser.name}</span>.
         </p>
       )}
@@ -156,9 +156,9 @@ export const LoginForm: React.FC = () => {
         type="submit"
         size="lg"
         disabled={submitDisabled}
-        className="group w-full justify-between rounded-md bg-[#0e1418] text-[#f4ede0] hover:bg-[#0e1418]/90 disabled:opacity-50"
+        className="group w-full justify-between rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
       >
-        <span className="font-black uppercase tracking-[0.22em]">
+        <span className="font-semibold">
           {loading ? "Signing in" : "Continue"}
         </span>
         {loading ? (
@@ -169,12 +169,12 @@ export const LoginForm: React.FC = () => {
       </SharedButton>
 
       {/* Demo accounts quick-access panel — pulled from core/authorization */}
-      <div className="space-y-2 border-t border-[#0e1418]/10 pt-5">
+      <div className="space-y-3 border-t border-border pt-5">
         <div className="flex items-baseline justify-between">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0e1418]/55">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Quick access
           </p>
-          <span className="text-[10px] uppercase tracking-[0.22em] text-[#0e1418]/40">
+          <span className="text-xs uppercase tracking-wider text-muted-foreground/70">
             Demo credentials
           </span>
         </div>
@@ -192,12 +192,12 @@ export const LoginForm: React.FC = () => {
                 onDoubleClick={() => copyCreds(account)}
                 title="Click to autofill · double-click to copy"
                 className={cn(
-                  "group flex items-center justify-between gap-3 rounded-md border border-[#0e1418]/15 bg-white px-3 py-2 text-left transition-all duration-200",
-                  "hover:-translate-y-0.5 hover:border-[#0e1418]/40 hover:shadow-sm",
+                  "group flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 text-left transition-all duration-200",
+                  "hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md",
                   "disabled:cursor-not-allowed disabled:opacity-50",
                   active
-                    ? "border-[#0e1418] bg-[#0e1418] text-[#f4ede0]"
-                    : "text-[#0e1418]",
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "text-foreground",
                 )}
               >
                 <div className="flex min-w-0 items-center gap-2">
@@ -208,13 +208,13 @@ export const LoginForm: React.FC = () => {
                     )}
                   />
                   <div className="min-w-0 leading-tight">
-                    <p className="text-[11px] font-black uppercase tracking-tight">
+                    <p className="text-xs font-semibold uppercase tracking-tight">
                       {meta?.label}
                     </p>
                     <p
                       className={cn(
                         "truncate font-mono text-[10px]",
-                        active ? "text-[#f4ede0]/70" : "text-[#0e1418]/55",
+                        active ? "text-primary-foreground/70" : "text-muted-foreground",
                       )}
                     >
                       {account.email}
@@ -236,12 +236,12 @@ export const LoginForm: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between border-t border-[#0e1418]/10 pt-5 text-xs text-[#0e1418]/70">
+      <div className="flex items-center justify-center border-t border-border pt-5 text-sm text-muted-foreground">
         <p>Don't have an account?</p>
         <button
           type="button"
           onClick={() => navigate(authRoutesConfig.register())}
-          className="font-semibold uppercase tracking-[0.22em] text-[#0e1418] underline decoration-[#0e1418]/30"
+          className="ml-2 font-semibold text-primary underline decoration-primary/30 hover:text-primary/80"
         >
           Register
         </button>

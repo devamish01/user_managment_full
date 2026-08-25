@@ -51,10 +51,10 @@ export const RegisterForm: React.FC = () => {
     loading || !username.trim() || !firstName.trim() || !lastName.trim() || !email.trim() || !password;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-7">
-      <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-5">
         <label className="block space-y-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0e1418]/55">
+          <span className="text-sm font-medium text-foreground">
             Username
           </span>
           <SharedInput
@@ -64,13 +64,13 @@ export const RegisterForm: React.FC = () => {
             placeholder="your_username"
             disabled={loading}
             autoComplete="username"
-            className="h-11 border-[#0e1418]/15 bg-white text-[#0e1418] focus-visible:ring-[#0e1418]/30"
+            className="h-11 border-border bg-background text-foreground focus-visible:ring-primary/30"
           />
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-1.5">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0e1418]/55">
+            <span className="text-sm font-medium text-foreground">
               First name
             </span>
             <SharedInput
@@ -80,11 +80,11 @@ export const RegisterForm: React.FC = () => {
               placeholder="First name"
               disabled={loading}
               autoComplete="given-name"
-              className="h-11 border-[#0e1418]/15 bg-white text-[#0e1418] focus-visible:ring-[#0e1418]/30"
+              className="h-11 border-border bg-background text-foreground focus-visible:ring-primary/30"
             />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0e1418]/55">
+            <span className="text-sm font-medium text-foreground">
               Last name
             </span>
             <SharedInput
@@ -94,13 +94,13 @@ export const RegisterForm: React.FC = () => {
               placeholder="Last name"
               disabled={loading}
               autoComplete="family-name"
-              className="h-11 border-[#0e1418]/15 bg-white text-[#0e1418] focus-visible:ring-[#0e1418]/30"
+              className="h-11 border-border bg-background text-foreground focus-visible:ring-primary/30"
             />
           </label>
         </div>
 
         <label className="block space-y-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0e1418]/55">
+          <span className="text-sm font-medium text-foreground">
             Email
           </span>
           <SharedInput
@@ -110,12 +110,12 @@ export const RegisterForm: React.FC = () => {
             placeholder="you@example.com"
             disabled={loading}
             autoComplete="email"
-            className="h-11 border-[#0e1418]/15 bg-white text-[#0e1418] focus-visible:ring-[#0e1418]/30"
+            className="h-11 border-border bg-background text-foreground focus-visible:ring-primary/30"
           />
         </label>
 
         <label className="block space-y-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0e1418]/55">
+          <span className="text-sm font-medium text-foreground">
             Password
           </span>
           <SharedInput
@@ -125,23 +125,23 @@ export const RegisterForm: React.FC = () => {
             placeholder="••••••••"
             disabled={loading}
             autoComplete="new-password"
-            className="h-11 border-[#0e1418]/15 bg-white text-[#0e1418] focus-visible:ring-[#0e1418]/30"
+            className="h-11 border-border bg-background text-foreground focus-visible:ring-primary/30"
           />
-          <p className="text-[10px] text-[#0e1418]/50">Must be at least 8 characters</p>
+          <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
         </label>
       </div>
 
       {error && (
         <p
           role="alert"
-          className="rounded-md border border-red-500/30 bg-red-500/5 px-3 py-2 text-xs text-red-600"
+          className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
         >
           {error}
         </p>
       )}
 
       {success && (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-md border border-success/30 bg-success/5 px-3 py-2 text-sm text-success">
           Registration successful. <button type="button" onClick={goToLogin} className="font-semibold underline">Sign in now</button>.
         </div>
       )}
@@ -150,9 +150,9 @@ export const RegisterForm: React.FC = () => {
         type="submit"
         size="lg"
         disabled={submitDisabled}
-        className="group w-full justify-between rounded-md bg-[#0e1418] text-[#f4ede0] hover:bg-[#0e1418]/90 disabled:opacity-50"
+        className="group w-full justify-between rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
       >
-        <span className="font-black uppercase tracking-[0.22em]">
+        <span className="font-semibold">
           {loading ? "Registering" : "Create account"}
         </span>
         {loading ? (
@@ -162,12 +162,12 @@ export const RegisterForm: React.FC = () => {
         )}
       </SharedButton>
 
-      <div className="flex items-center justify-between border-t border-[#0e1418]/10 pt-5 text-xs text-[#0e1418]/70">
+      <div className="flex items-center justify-center border-t border-border pt-5 text-sm text-muted-foreground">
         <p>Already have an account?</p>
         <button
           type="button"
           onClick={goToLogin}
-          className="font-semibold uppercase tracking-[0.22em] text-[#0e1418] underline decoration-[#0e1418]/30"
+          className="ml-2 font-semibold text-primary underline decoration-primary/30 hover:text-primary/80"
         >
           Sign in
         </button>

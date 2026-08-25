@@ -22,6 +22,7 @@ export type PermissionModule = (typeof PERMISSION_MODULES)[keyof typeof PERMISSI
 
 export const DEFAULT_PERMISSIONS = [
   // ── Sidebar Navigation (Global UI) ──
+  { permissionId: "PRM_000", id: "p000", name: "View Home", key: "home.view", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show the Home tab in the sidebar (global)" },
   { permissionId: "PRM_001", id: "p001", name: "View Dashboard", key: "pages.dashboard", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show the Dashboard tab in the sidebar" },
   { permissionId: "PRM_002", id: "p002", name: "View Users", key: "pages.users", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show the Users tab in the sidebar" },
   { permissionId: "PRM_003", id: "p003", name: "View Permissions", key: "pages.permissions", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show the Permissions tab in the sidebar" },

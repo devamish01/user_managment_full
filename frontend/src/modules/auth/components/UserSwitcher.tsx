@@ -8,7 +8,7 @@
  */
 
 import * as React from "react";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@/utils/cn";
 import { ROLE_DISPLAY } from "@/core/authorization";
 
 export interface UserSwitcherSelection {
@@ -32,10 +32,10 @@ export const UserSwitcher: React.FC<UserSwitcherProps> = ({
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#0e1418]/55">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Sign in as
         </p>
-        <span className="text-[11px] uppercase tracking-[0.22em] text-[#0e1418]/40">
+        <span className="text-xs uppercase tracking-wider text-muted-foreground/70">
           {roles.length} roles
         </span>
       </div>
@@ -52,11 +52,11 @@ export const UserSwitcher: React.FC<UserSwitcherProps> = ({
               }
               aria-pressed={active}
               className={cn(
-                "group relative flex flex-col items-start gap-2 overflow-hidden rounded-md border p-3 text-left transition-all duration-200",
+                "group relative flex flex-col items-start gap-2 overflow-hidden rounded-lg border p-3 text-left transition-all duration-200",
                 "hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50",
                 active
-                  ? "border-[#0e1418] bg-[#0e1418] text-[#f4ede0] shadow-md"
-                  : "border-[#0e1418]/15 bg-white text-[#0e1418] hover:border-[#0e1418]/40",
+                  ? "border-primary bg-primary text-primary-foreground shadow-md"
+                  : "border-border bg-card text-foreground hover:border-primary/40",
               )}
             >
               <span
@@ -67,18 +67,18 @@ export const UserSwitcher: React.FC<UserSwitcherProps> = ({
                 )}
               />
               <div className="leading-tight">
-                <p className="text-xs font-black uppercase tracking-tight">{meta.label}</p>
+                <p className="text-xs font-semibold uppercase tracking-tight">{meta.label}</p>
                 <p
                   className={cn(
                     "truncate font-mono text-[10px]",
-                    active ? "text-[#f4ede0]/70" : "text-[#0e1418]/55",
+                    active ? "text-primary-foreground/70" : "text-muted-foreground",
                   )}
                 >
                   {meta.email}
                 </p>
               </div>
               {active && (
-                <span className="absolute right-2 top-2 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="absolute right-2 top-2 inline-block h-1.5 w-1.5 rounded-full bg-success" />
               )}
             </button>
           );

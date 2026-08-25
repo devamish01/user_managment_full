@@ -5,7 +5,13 @@
  *
  * Tree:
  *   /                      → AppRoot (AppProviders only)
+ *   ├─ home                → ProtectedHomePage (handles both auth states)
  *   ├─ login               → LoginPage  (public)
+ *   ├─ about               → AboutPage (public)
+ *   ├─ contact             → ContactPage (public)
+ *   ├─ privacy-policy      → PrivacyPolicyPage (public)
+ *   ├─ terms               → TermsPage (public)
+ *   ├─ register            → RegisterPage (public)
  *   └─ ""                  → ProtectedRoute (auth gate)
  *        └─ ""             → AdminLayout shell
  *             ├─ index     → /dashboard
@@ -33,7 +39,6 @@ import { NotFound } from "./pages/NotFound";
 import { Forbidden } from "./pages/Forbidden";
 import { ProtectedRoute } from "./guards/ProtectedRoute";
 
-import { authRoutes } from "@/modules/auth/routes";
 import { dashboardRoutes } from "@/modules/dashboard.routes";
 import { usersRoutes } from "@/modules/users/routes";
 import { rolesRoutes } from "@/modules/roles/routes";
@@ -42,6 +47,8 @@ import { logsRoutes } from "@/modules/logs.routes";
 import { settingsRoutes } from "@/modules/settings.routes";
 import { overviewRoutes } from "@/modules/overview.routes";
 import { paymentsRoutes } from "@/modules/payments/routes";
+import { publicRoutes } from "@/modules/public/routes";
+import { ProtectedHomePage } from "@/modules/public/home/ProtectedHomePage";
 
 /**
  * AppRoot — providers only, no routing decisions.
@@ -79,8 +86,14 @@ export const router = createBrowserRouter([
     path: "/",
     element: <AppRoot />,
     children: [
-      // Public auth routes (no authentication required)
-      ...authRoutes,
+      // Root redirects to /home
+      { index: true, element: <Navigate to="/home" replace /> },
+
+      // Home page - handles both authenticated and unauthenticated states
+      { path: "home", element: <ProtectedHomePage /> },
+
+      // Public module routes (about, contact, privacy, terms, login, register, etc.)
+      ...publicRoutes,
 
       // Protected application routes
       {

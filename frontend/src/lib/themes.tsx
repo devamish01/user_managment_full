@@ -1,7 +1,37 @@
-import * as React from "react";
-import { ThemeMode, ThemeConfig, ThemeCtx } from "../context/ThemeContext";
+"use client";
 
-const themes: Record<ThemeMode, ThemeConfig> = {
+export type ThemeMode = 
+  | "light" 
+  | "minimal-light" 
+  | "dark" 
+  | "retro" 
+  | "neon" 
+  | "monochrome" 
+  | "glass" 
+  | "terminal" 
+  | "luxury";
+
+export interface ThemeConfig {
+  name: string;
+  description: string;
+  background: string;
+  foreground: string;
+  card: string;
+  cardForeground: string;
+  muted: string;
+  mutedForeground: string;
+  accent: string;
+  accentForeground: string;
+  border: string;
+  shadow: string;
+  fontClass?: string;
+}
+
+export function normalizeThemeMode(theme: ThemeMode): Exclude<ThemeMode, "light"> {
+  return theme === "light" ? "minimal-light" : theme;
+}
+
+export const themes: Record<ThemeMode, ThemeConfig> = {
   light: {
     name: "Minimal Light",
     description: "Clean & modern",
@@ -131,7 +161,7 @@ const themes: Record<ThemeMode, ThemeConfig> = {
   },
 };
 
-const themeButtons: { mode: ThemeMode; label: string }[] = [
+export const themeButtons: { mode: ThemeMode; label: string }[] = [
   { mode: "minimal-light", label: "Minimal Light" },
   { mode: "dark", label: "Dark Mode" },
   { mode: "retro", label: "Retro Split-Flap" },
@@ -141,57 +171,3 @@ const themeButtons: { mode: ThemeMode; label: string }[] = [
   { mode: "terminal", label: "Terminal" },
   { mode: "luxury", label: "Luxury Gold" },
 ];
-
-function normalizeThemeMode(theme: ThemeMode): Exclude<ThemeMode, "light"> {
-  return theme === "light" ? "minimal-light" : theme;
-}
-
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = React.useState<ThemeMode>(() => {
-    if (typeof window === "undefined") return "minimal-light";
-    const saved = localStorage.getItem("theme") as ThemeMode | null;
-    if (saved) return saved;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "minimal-light";
-  });
-
-  React.useEffect(() => {
-    const root = document.documentElement;
-    const normalizedTheme = normalizeThemeMode(theme);
-    const themeConfig = themes[normalizedTheme];
-
-    // Remove all theme classes
-    Object.values(themes).forEach((t) => {
-      root.classList.remove(...t.background.split(" "));
-      root.classList.remove(...t.foreground.split(" "));
-      root.classList.remove(...t.card.split(" "));
-      root.classList.remove(...t.cardForeground.split(" "));
-      root.classList.remove(...t.muted.split(" "));
-      root.classList.remove(...t.mutedForeground.split(" "));
-      root.classList.remove(...t.accent.split(" "));
-      root.classList.remove(...t.accentForeground.split(" "));
-      root.classList.remove(...t.border.split(" "));
-      root.classList.remove(...t.shadow.split(" "));
-      if (t.fontClass) {
-        root.classList.remove(...t.fontClass.split(" "));
-      }
-    });
-
-    // Apply current theme
-    root.classList.add(...themeConfig.background.split(" "));
-    root.classList.add(...themeConfig.foreground.split(" "));
-    if (themeConfig.fontClass) {
-      root.classList.add(...themeConfig.fontClass.split(" "));
-    }
-
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  return (
-    <ThemeCtx.Provider value={{ theme, setTheme, themes, themeButtons }}>
-      {children}
-    </ThemeCtx.Provider>
-  );
-};
-export default ThemeProvider;
-
-export { themes, themeButtons };

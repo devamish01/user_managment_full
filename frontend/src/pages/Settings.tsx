@@ -37,7 +37,7 @@ import { useUsersStore } from "@/modules/users";
 import { SharedButton, SharedBadge } from "@/shared/components";
 
 export const Settings = () => {
-  const { theme, toggle } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { toastError, toastSuccess } = useToastError();
   const {
     currentRoleId,

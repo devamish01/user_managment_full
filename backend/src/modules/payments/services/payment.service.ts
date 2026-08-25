@@ -100,8 +100,13 @@ const transformPaymentDetail = (payment: any, userName: string) => {
       oldValue: t.oldValue,
       newValue: t.newValue,
       reason: t.reason,
+      changes: t.changes?.map((c: any) => ({
+        field: c.field,
+        oldValue: c.oldValue,
+        newValue: c.newValue,
+      })) || [],
     })) || [],
-    isModified: payment.isModified,
+    isModified: payment.isEdited,
     lastModifiedAt: payment.lastModifiedAt instanceof Date ? payment.lastModifiedAt.toISOString() : payment.lastModifiedAt,
     lastModifiedBy: payment.lastModifiedBy,
   };

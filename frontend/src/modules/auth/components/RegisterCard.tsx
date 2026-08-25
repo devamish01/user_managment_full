@@ -1,5 +1,6 @@
 import * as React from "react";
 import { RegisterForm } from "./RegisterForm";
+import { cn } from "@/utils/cn";
 
 export interface RegisterCardProps {
   edition?: string;
@@ -7,23 +8,27 @@ export interface RegisterCardProps {
 }
 
 export const RegisterCard: React.FC<RegisterCardProps> = ({
-  edition = "No. 002",
-  footnote = "Set up a new workspace account and continue to the admin console.",
+  edition = "v2.0",
+  footnote = "Set up a new account and join the Nexus community.",
 }) => (
-  <div className="relative flex h-full flex-col justify-between bg-[#f4ede0] p-8 sm:p-12">
-    <div className="flex items-baseline justify-between text-[11px] uppercase tracking-[0.22em] text-[#0e1418]/55">
-      <span>Register · {edition}</span>
-      <span>New account</span>
+  <div className={cn(
+    "relative flex h-full flex-col justify-between",
+    "bg-card border border-border rounded-2xl p-8 sm:p-10 lg:p-12",
+    "shadow-xl"
+  )}>
+    <div className="flex items-baseline justify-between text-xs uppercase tracking-wider text-muted-foreground mb-8">
+      <span>{edition}</span>
+      <span>New Account</span>
     </div>
 
-    <div className="py-8">
-      <p className="mb-6 font-serif text-base italic text-[#0e1418]/70">
-        “Bring your own identity into a shared operations workspace.”
+    <div className="py-4 space-y-6">
+      <p className="mb-2 text-base italic text-muted-foreground text-center">
+        "Bring your own identity into a shared community platform."
       </p>
       <RegisterForm />
     </div>
 
-    <p className="border-t border-[#0e1418]/10 pt-5 text-[11px] uppercase tracking-[0.22em] text-[#0e1418]/55">
+    <p className="border-t border-border pt-5 text-xs uppercase tracking-wider text-muted-foreground text-center">
       {footnote}
     </p>
   </div>

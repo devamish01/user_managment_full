@@ -115,6 +115,7 @@ export interface NavigationItem {
 }
 
 export type RouteName =
+  | "home"
   | "dashboard"
   | "users"
   | "userDetails"

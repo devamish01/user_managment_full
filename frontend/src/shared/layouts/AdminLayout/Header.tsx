@@ -39,7 +39,7 @@ import { authRoutesConfig } from "@/modules/auth/routes";
 import { useUsersStore } from "@/modules/users";
 
 export const Header = ({ onMenu }: { onMenu: () => void }) => {
-  const { theme, toggle } = useTheme();
+  const { theme, setTheme } = useTheme();
   const {  roles } = useStore();
   const { users } = useUsersStore();
 
