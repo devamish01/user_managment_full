@@ -28,8 +28,6 @@ interface PublicHeaderProps {
   logoText?: string;
   /** onMenu callback for mobile sidebar toggle (admin layout) */
   onMenu?: () => void;
-  /** Whether to show mobile menu button */
-  showMobileMenu?: boolean;
 }
 
 export const PublicHeader: React.FC<PublicHeaderProps> = ({
@@ -43,7 +41,6 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   logoHref = "/home",
   logoText = "Nexus",
   onMenu,
-  showMobileMenu = false,
 }) => {
   const { theme, setTheme } = useTheme();
   const { logout, currentUser } = useAuth();
@@ -87,20 +84,23 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between" aria-label="Main navigation">
+    <header className="fixed inset-x-0 top-0 z-[70] border-b border-border bg-background/95 backdrop-blur-sm">
+      <nav
+        className="mx-auto flex h-16 w-full max-w-[1800px] items-center gap-3 px-3 sm:px-5 lg:px-8"
+        aria-label="Main navigation"
+      >
         {/* Logo */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center">
           <Link to={logoHref} className="flex items-center gap-2" aria-label={`${logoText} Home`}>
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
-              <span className="font-black text-primary-foreground text-lg">N</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-sm shadow-primary/20">
+              <span className="text-base font-black text-primary-foreground">N</span>
             </div>
-            <span className="font-black text-lg text-foreground hidden sm:block">{logoText}</span>
+            <span className="text-2xl font-black tracking-tight text-foreground sm:text-[1.75rem]">{logoText}</span>
           </Link>
         </div>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden flex-1 items-center justify-start gap-5 md:flex lg:gap-8">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href || 
               (item.href !== "/home" && location.pathname.startsWith(item.href + "/"));
@@ -109,7 +109,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
                 key={item.label}
                 to={item.href}
                 className={cn(
-                  "text-sm font-medium transition-colors relative",
+                  "relative text-sm font-medium transition-colors lg:text-[15px]",
                   isActive
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -118,7 +118,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
               >
                 {item.label}
                 {isActive && (
-                  <span className="absolute bottom-[-8px] left-0 right-0 h-0.5 bg-primary rounded-full" />
+                  <span className="absolute -bottom-2 left-0 right-0 h-0.5 rounded-full bg-primary" />
                 )}
               </Link>
             );
@@ -126,7 +126,7 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
         </div>
 
         {/* Right Side Actions */}
-        <div className="flex items-center gap-3">
+        <div className="ml-auto flex min-w-0 items-center justify-end gap-2 sm:gap-3">
           {/* User Search (only for authenticated users with permission) */}
           {showUserDropdown && hasPermission("pages.users") && (
             <div ref={ref} className="relative w-full max-w-md hidden lg:block">
@@ -220,9 +220,9 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
               trigger={
                 <button className="flex items-center gap-2 rounded-lg p-1 pr-2 transition-colors hover:bg-accent">
                   <Avatar name={currentUser?.name ?? "User"} size={32} />
-                  <div className="hidden text-left md:block">
-                    <p className="text-xs font-semibold leading-tight">{currentUser?.name ?? "—"}</p>
-                    <p className="text-[10px] text-muted-foreground">{currentRole?.name ?? "—"}</p>
+                  <div className="hidden min-w-0 max-w-[180px] text-left md:block">
+                    <p className="truncate text-xs font-semibold leading-tight">{currentUser?.name ?? "—"}</p>
+                    <p className="truncate text-[10px] font-medium text-muted-foreground">{currentRole?.name ?? "—"}</p>
                   </div>
                   <ChevronDown size={14} className="hidden text-muted-foreground md:block" />
                 </button>
@@ -265,28 +265,26 @@ export const PublicHeader: React.FC<PublicHeaderProps> = ({
             </Dropdown>
           )}
 
-          {/* Mobile Menu Button */}
-          {showMobileMenu && (
-            <button
-              className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-              onClick={() => {
-                if (onMenu) {
-                  onMenu();
-                } else {
-                  setMobileMenuOpen(!mobileMenuOpen);
-                }
-              }}
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={mobileMenuOpen}
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          )}
+          {/* Mobile Menu Button - Always show on mobile */}
+          <button
+            className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            onClick={() => {
+              if (onMenu) {
+                onMenu();
+              } else {
+                setMobileMenuOpen(!mobileMenuOpen);
+              }
+            }}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
       </nav>
 
       {/* Mobile Navigation */}
-      {mobileMenuOpen && showMobileMenu && (
+      {mobileMenuOpen && (
         <div className="md:hidden py-4 border-t border-border">
           <div className="flex flex-col gap-4">
             {navigation.map((item) => {

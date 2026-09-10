@@ -12,6 +12,7 @@ import {
   StoreProvider,
 } from "@/store";
 import { ToastProvider } from "@/components/ui/toast";
+import { AuthBootstrap } from "./AuthBootstrap";
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -21,9 +22,11 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   return (
     <ThemeProvider>
       <StoreProvider>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <AuthBootstrap>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </AuthBootstrap>
       </StoreProvider>
     </ThemeProvider>
   );

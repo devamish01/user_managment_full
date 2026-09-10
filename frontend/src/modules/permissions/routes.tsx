@@ -1,6 +1,6 @@
 import type { RouteObject } from "react-router-dom";
 import { PermissionGuard } from "@/router/guards/PermissionGuard";
-import { Permissions } from "@/modules/permissions/components/Permissions";
+import { PermissionsPage } from "@/modules/permissions/pages/PermissionsPage";
 
 /**
  * Permissions Route Helpers
@@ -16,6 +16,6 @@ export const permissionsRoutes: RouteObject[] = [
   {
     path: "permissions",
     element: <PermissionGuard permission="pages.permissions" />,
-    children: [{ index: true, element: <Permissions /> }],
+    children: [{ index: true, element: <PermissionsPage /> }],
   },
 ];

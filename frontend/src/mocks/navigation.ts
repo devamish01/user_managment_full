@@ -3,6 +3,15 @@ import type { NavigationItem } from "@/lib/types";
 /** Seed data for the mock navigation backend. */
 export const mockNavigation: NavigationItem[] = [
   {
+    id: "nav-home",
+    title: "Home",
+    order: 0,
+    visible: true,
+    children: [
+      { id: "nav-home-item", title: "Home", icon: "layout-dashboard", route: "home", permission: undefined, order: 1, visible: true, children: [] },
+    ],
+  },
+  {
     id: "nav-overview",
     title: "Overview",
     order: 1,

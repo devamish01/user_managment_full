@@ -30,6 +30,7 @@ import { cn } from "@/shared/utils/cn";
 import { SharedButton, SharedBadge, SharedTable, SharedInput } from "@/shared/components";
 import { statusToBadgeVariant } from "@/shared/utils/format";
 import { UserService } from "@/modules/users";
+import "@/modules/auth/styles/auth.css";
 
 /**
  * MyProfilePage — logged-in user's own profile page.
@@ -281,9 +282,9 @@ export const MyProfilePage = () => {
   const role = user.role; // User type has role as string
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="auth-module-profile-page space-y-6 pb-12">
       {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="auth-module-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">My Profile</h1>
           <p className="text-sm text-muted-foreground">
@@ -317,9 +318,9 @@ export const MyProfilePage = () => {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-8">
+      <div className="auth-module-profile-shell mx-auto w-full max-w-[1500px] space-y-6 px-2 sm:px-4 lg:px-6">
         {/* Profile Header */}
-        <div className="rounded-xl border border-border bg-card shadow-sm">
+        <div className="auth-module-card rounded-xl border border-border bg-card shadow-sm">
           <div className="flex flex-col gap-4 py-6 px-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
               <div className={cn("relative flex shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br font-semibold text-white ring-4 ring-card from-indigo-500 to-purple-500 w-16 h-16 text-xl")}>
@@ -421,7 +422,7 @@ export const MyProfilePage = () => {
 
           {expanded && (
             <>
-              <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="auth-module-stat-grid mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-xl border border-border bg-card shadow-sm p-5">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
@@ -468,8 +469,8 @@ export const MyProfilePage = () => {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-b border-border">
+              <div className="auth-module-card rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+                <div className="auth-module-table-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 border-b border-border">
                   <div>
                     <h3 className="text-lg font-semibold">Recent Transactions</h3>
                     <p className="text-sm text-muted-foreground">Latest {recentTransactions.length} of {paymentStats.total} transactions.</p>

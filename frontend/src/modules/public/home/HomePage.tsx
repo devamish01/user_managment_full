@@ -2,14 +2,34 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { CreditCard, ArrowRight, Users, Target, TrendingUp, Shield, Sparkles, Lock, Zap, Clock } from "lucide-react";
-import { Button } from "@/components/ui";
+import { CreditCard, ArrowRight, Users, Target, TrendingUp, Shield, Sparkles, Lock, Zap } from "lucide-react";
+import { Button, Input, Label } from "@/components/ui";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui";
 import { cn } from "@/utils/cn";
-import { Countdown } from "./components/Countdown";
-// import { ThemedCountdown } from "@/components/themed-countdown";
+import { ThemedCountdown } from "@/components/themed-countdown";
 
 export const HomePage: React.FC = () => {
+  const [targetDate, setTargetDate] = React.useState<Date>(() => {
+    const next = new Date();
+    next.setDate(next.getDate() + 7);
+    return next;
+  });
+  const [days, setDays] = React.useState("7");
+  const [hours, setHours] = React.useState("0");
+  const [minutes, setMinutes] = React.useState("0");
+  const [seconds, setSeconds] = React.useState("0");
+  const [showSettings, setShowSettings] = React.useState(false);
+
+  const handleSetTimer = () => {
+    const next = new Date();
+    next.setDate(next.getDate() + Number.parseInt(days || "0", 10));
+    next.setHours(next.getHours() + Number.parseInt(hours || "0", 10));
+    next.setMinutes(next.getMinutes() + Number.parseInt(minutes || "0", 10));
+    next.setSeconds(next.getSeconds() + Number.parseInt(seconds || "0", 10));
+    setTargetDate(next);
+    setShowSettings(false);
+  };
+
   const features = [
     {
       icon: CreditCard,
@@ -132,28 +152,88 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Countdown Timer */}
+              {/* Themed Countdown */}
               <div className="mt-12 animate-fade-in-up" style={{ animationDelay: "500ms" }}>
-                <div className="inline-flex items-center gap-4 px-6 py-4 rounded-2xl bg-primary/5 border border-primary/20">
-                  <Clock className="w-6 h-6 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Next Feature Launch:</span>
-                  <Countdown 
-                    targetDate={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()} 
-                    size="md"
-                    showLabel={true}
-                  />
+                <div className="text-center">
+                  <p className="text-sm font-medium text-muted-foreground mb-3">Next Feature Launch</p>
+                  <div className="flex justify-center">
+                    <ThemedCountdown targetDate={targetDate} />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="mt-4 text-xs font-medium text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline"
+                  >
+                    Adjust timer
+                  </button>
                 </div>
               </div>
 
-              {/* Themed Countdown */}
-              <div className="mt-8 animate-fade-in-up" style={{ animationDelay: "600ms" }}>
-                <div className="text-center">
-                  <p className="text-sm font-medium text-muted-foreground mb-3">Launch Countdown</p>
-                  {/* <ThemedCountdown 
-                    targetDate={new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)} 
-                  /> */}
+              {showSettings && (
+                <div className="mx-auto mt-6 w-full max-w-xl rounded-2xl border border-border bg-card/80 p-4 shadow-sm backdrop-blur-sm">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="days" className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Days
+                      </Label>
+                      <Input
+                        id="days"
+                        type="number"
+                        min="0"
+                        value={days}
+                        onChange={(e) => setDays(e.target.value)}
+                        className="text-center"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="hours" className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Hours
+                      </Label>
+                      <Input
+                        id="hours"
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={hours}
+                        onChange={(e) => setHours(e.target.value)}
+                        className="text-center"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="minutes" className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Minutes
+                      </Label>
+                      <Input
+                        id="minutes"
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={minutes}
+                        onChange={(e) => setMinutes(e.target.value)}
+                        className="text-center"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="seconds" className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Seconds
+                      </Label>
+                      <Input
+                        id="seconds"
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={seconds}
+                        onChange={(e) => setSeconds(e.target.value)}
+                        className="text-center"
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="button" onClick={handleSetTimer} className="mt-4 w-full">
+                    Set Timer
+                  </Button>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </section>

@@ -70,22 +70,31 @@ export const ProtectedRoute: React.FC = () => {
   const { isAuthenticated, loadCurrentUser, loading } = useAuth();
   const [settled, setSettled] = useState(false);
 
-  // One-shot session restore — runs only on first mount of the protected tree.
+  // Restore the persisted session once on mount. Until this completes,
+  // protected children must not render or trigger protected APIs.
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      await loadCurrentUser();
-      if (!cancelled) setSettled(true);
-    })();
+
+    const initialise = async () => {
+      try {
+        await loadCurrentUser();
+      } finally {
+        if (!cancelled) {
+          setSettled(true);
+        }
+      }
+    };
+
+    void initialise();
     return () => { cancelled = true; };
   }, [loadCurrentUser]);
 
-  // Session restore still in flight.
-  if (!settled || loading) {
-    return <Outlet />;
+  // Keep the app on a loading screen until the persisted session is restored.
+  if (loading || !settled) {
+    return <BootScreen />;
   }
 
-  // Not authenticated — redirect to login.
+  // Not authenticated after restore — redirect to login.
   if (!isAuthenticated) {
     return <Navigate to={authRoutesConfig.login()} replace />;
   }

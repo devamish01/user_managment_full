@@ -397,7 +397,7 @@ export const Dropdown = ({
       {open && (
         <div
           className={cn(
-            "absolute z-40 mt-1 min-w-[180px] rounded-lg border border-border bg-popover p-1 shadow-lg animate-in",
+            "absolute z-[70] mt-1 min-w-[180px] rounded-lg border border-border bg-popover p-1 shadow-lg animate-in",
             align === "right" ? "right-0" : "left-0",
           )}
         >

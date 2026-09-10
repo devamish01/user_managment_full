@@ -6,12 +6,12 @@
  * Protected by PermissionGuard requiring "pages.transactions" permission.
  */
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { SharedTable } from "@/shared/components/SharedTable";
 import { SharedButton } from "@/shared/components/SharedButton";
 import { SharedPagination } from "@/shared/components/SharedPagination";
-import { Download, Plus, ArrowLeft, User } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import { usePaymentsStore } from "../store";
 import { useToastError } from "@/core/api/toastUtils";
 import type { PaymentRecord, PaymentStatus, PaymentDirection, PaymentCategory } from "../types";
@@ -21,10 +21,12 @@ import { TransactionFilters, getTransactionColumns } from "@/modules/payments/co
 import { TransactionStatsBar } from "@/modules/payments/components/TransactionStatsBar";
 import { TransactionFormDialog } from "@/modules/payments/components/transactions/TransactionFormDialog";
 import { useTransactionPermissions } from "@/modules/payments/components/transactions/permissions";
+import "@/modules/payments/styles/payments.css";
 
 export const TransactionsPage = () => {
   const navigate = useNavigate();
-  const { payments, loading, error, getPayments, getTransactions, createPayment, updatePayment, deletePayment } = usePaymentsStore();
+  const [searchParams] = useSearchParams();
+  const { payments, loading, error, getTransactions, createPayment, updatePayment, deletePayment, pagination, stats } = usePaymentsStore();
   const { toastError, toastSuccess } = useToastError();
 
   // Permission checks
@@ -42,12 +44,8 @@ export const TransactionsPage = () => {
     viewSearchFilter: canViewSearchFilter,
   } = useTransactionPermissions();
 
-  // Debug: log payments state
-//   React.useEffect(() => {
-//     console.log('TransactionsPage - payments:', payments);
-//     console.log('TransactionsPage - loading:', loading);
-//     console.log('TransactionsPage - error:', error);
-//   }, [payments, loading, error]);
+  // URL userId for user-specific transaction filtering
+  const urlUserId = searchParams.get("userId") || undefined;
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all" | "pending" | "completed" | "rejected" | "refunded" | "credit" | "debit">("all");
@@ -57,22 +55,96 @@ export const TransactionsPage = () => {
   const [pageSize, setPageSize] = useState(10);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" }>({ key: "paymentDate", direction: "desc" });
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const normalizedPageSize = Number.isFinite(pageSize) && pageSize > 0 ? pageSize : 10;
   
   // Dialog state
   const [showFormDialog, setShowFormDialog] = useState(false);
   const [editingPayment, setEditingPayment] = useState<PaymentRecord | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
-  // Compute stats from all payments (not just filtered)
-  const stats = useMemo(() => ({
-    total: payments.length,
-    totalIn: payments.filter(p => p.direction === "credit").reduce((sum, p) => sum + p.amount, 0),
-    totalOut: payments.filter(p => p.direction === "debit").reduce((sum, p) => sum + p.amount, 0),
-    pending: payments.filter(p => p.status === "Pending").length,
-    completed: payments.filter(p => p.status === "Completed").length,
-    rejected: payments.filter(p => p.status === "Rejected").length,
-    refunded: payments.filter(p => p.status === "Refunded").length,
-  }), [payments]);
+  // Build query params for backend
+  const buildQueryParams = useCallback(() => {
+    const params: Record<string, any> = {
+      page,
+      limit: normalizedPageSize,
+    };
+
+    if (search) params.search = search;
+    if (urlUserId) params.userId = urlUserId;
+
+    // Handle special filter values from stats bar
+    if (statusFilter === "pending") {
+      params.status = "Pending";
+    } else if (statusFilter !== "all" && statusFilter !== "credit" && statusFilter !== "debit") {
+      params.status = statusFilter;
+    }
+
+    if (directionFilter !== "all") {
+      params.direction = directionFilter;
+    }
+
+    if (categoryFilter !== "all") {
+      params.category = categoryFilter;
+    }
+
+    if (sortConfig.key) {
+      params.sort = sortConfig.key;
+      params.order = sortConfig.direction;
+    }
+
+    return params;
+  }, [search, statusFilter, directionFilter, categoryFilter, sortConfig, page, normalizedPageSize, urlUserId]);
+
+  // Fallback stats when backend stats not yet loaded
+  const displayStats = useMemo(() => stats || {
+    total: 0,
+    totalIn: 0,
+    totalOut: 0,
+    pending: 0,
+    completed: 0,
+    rejected: 0,
+    refunded: 0,
+  }, [stats]);
+
+  // Fetch transactions when params change
+  useEffect(() => {
+    getTransactions(buildQueryParams());
+  }, [getTransactions, buildQueryParams]);
+
+  // Reset page to 1 when filters/search/sort/pageSize change
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    setPage(1);
+  }, []);
+
+  const handleStatusChange = useCallback((value: PaymentStatus | "all" | "pending" | "completed" | "rejected" | "refunded" | "credit" | "debit") => {
+    setStatusFilter(value);
+    setPage(1);
+  }, []);
+
+  const handleDirectionChange = useCallback((value: PaymentDirection | "all") => {
+    setDirectionFilter(value);
+    setPage(1);
+  }, []);
+
+  const handleCategoryChange = useCallback((value: PaymentCategory | "all") => {
+    setCategoryFilter(value);
+    setPage(1);
+  }, []);
+
+  const handleSort = useCallback((key: string) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+    }));
+    setPage(1);
+  }, []);
+
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size > 0 ? size : 10);
+    setPage(1);
+  }, []);
 
   const handleStatusClick = (status: "all" | "pending" | "completed" | "rejected" | "refunded" | "credit" | "debit") => {
     if (status === "all") {
@@ -100,74 +172,28 @@ export const TransactionsPage = () => {
     setPage(1);
   };
 
-  useEffect(() => {
-    getTransactions();
-  }, [getTransactions]);
-
-  const filteredPayments = useMemo(() => {
-    let result = [...payments];
-
-    if (search) {
-      const s = search.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.userName?.toLowerCase().includes(s) ||
-          p.utrNumber?.toLowerCase().includes(s) ||
-          p.notes?.toLowerCase().includes(s) ||
-          p.transactionId?.toLowerCase().includes(s)
-      );
+  // Use backend pagination meta directly
+  const paginationMeta: PaginationMeta = useMemo(() => {
+    if (pagination) {
+      return {
+        page: pagination.page,
+        limit: pagination.limit,
+        total: pagination.total,
+        totalPages: pagination.totalPages,
+        hasNext: pagination.hasNext,
+        hasPrevious: pagination.hasPrevious,
+      };
     }
-
-    // Handle special filter values from stats bar
-    if (statusFilter === "pending") {
-      result = result.filter((p) => p.status === "Pending");
-    } else if (statusFilter !== "all" && statusFilter !== "credit" && statusFilter !== "debit") {
-      result = result.filter((p) => p.status === statusFilter);
-    }
-
-    if (directionFilter !== "all") {
-      result = result.filter((p) => p.direction === directionFilter);
-    }
-
-    if (categoryFilter !== "all") {
-      result = result.filter((p) => p.category === categoryFilter);
-    }
-
-    result.sort((a, b) => {
-      const aVal = a[sortConfig.key as keyof typeof a];
-      const bVal = b[sortConfig.key as keyof typeof b];
-      if (aVal == null && bVal == null) return 0;
-      if (aVal == null) return sortConfig.direction === "asc" ? -1 : 1;
-      if (bVal == null) return sortConfig.direction === "asc" ? 1 : -1;
-      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    return result;
-  }, [payments, search, statusFilter, directionFilter, categoryFilter, sortConfig]);
-
-  const paginatedPayments = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredPayments.slice(start, start + pageSize);
-  }, [filteredPayments, page, pageSize]);
-
-  // Pagination meta for SharedPagination component
-  const paginationMeta: PaginationMeta = useMemo(() => ({
-    page,
-    limit: pageSize,
-    total: filteredPayments.length,
-    totalPages: Math.ceil(filteredPayments.length / pageSize),
-    hasNext: page < Math.ceil(filteredPayments.length / pageSize),
-    hasPrevious: page > 1,
-  }), [filteredPayments.length, page, pageSize]);
-
-  const handleSort = (key: string) => {
-    setSortConfig((prev) => ({
-      key,
-      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
-    }));
-  };
+    // Fallback when pagination not yet loaded
+    return {
+      page: 1,
+      limit: normalizedPageSize,
+      total: 0,
+      totalPages: 1,
+      hasNext: false,
+      hasPrevious: false,
+    };
+  }, [pagination, normalizedPageSize]);
 
   const handleView = (payment: PaymentRecord) => {
     navigate(`/payments/transactions/${payment.transactionId}`);
@@ -237,7 +263,7 @@ export const TransactionsPage = () => {
   };
 
   const toggleSelectAll = (checked: boolean) => {
-    setSelectedIds(checked ? paginatedPayments.map((p) => p.transactionId) : []);
+    setSelectedIds(checked ? payments.map((p) => p.transactionId) : []);
   };
 
   const toggleRowSelection = (id: string, checked: boolean) => {
@@ -248,7 +274,7 @@ export const TransactionsPage = () => {
 
   const columns = getTransactionColumns({
     selectedIds,
-    paginatedPayments,
+    paginatedPayments: payments,
     toggleSelectAll,
     toggleRowSelection,
     onView: handleView,
@@ -273,7 +299,7 @@ export const TransactionsPage = () => {
     return (
       <div className="text-center py-8 text-red-600">
         <p>Error loading transactions: {error}</p>
-        <SharedButton onClick={() => getTransactions()} className="mt-4">
+        <SharedButton onClick={() => getTransactions(buildQueryParams())} className="mt-4">
           Retry
         </SharedButton>
       </div>
@@ -281,9 +307,9 @@ export const TransactionsPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="payments-module-page">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="payments-module-header">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Transactions</h1>
           <p className="text-muted-foreground mt-1">View and manage all payment transactions</p>
@@ -306,7 +332,7 @@ export const TransactionsPage = () => {
 
       {/* Stats Bar */}
       <TransactionStatsBar
-        stats={stats}
+        stats={displayStats}
         statusFilter={statusFilter === "all" ? "all" : statusFilter === "Pending" ? "pending" : directionFilter}
         onStatusClick={handleStatusClick}
         canViewStats={canViewStats}
@@ -320,10 +346,10 @@ export const TransactionsPage = () => {
         statusFilter={statusFilter}
         directionFilter={directionFilter}
         categoryFilter={categoryFilter}
-        onSearchChange={setSearch}
-        onStatusChange={setStatusFilter}
-        onDirectionChange={setDirectionFilter}
-        onCategoryChange={setCategoryFilter}
+        onSearchChange={handleSearchChange}
+        onStatusChange={handleStatusChange}
+        onDirectionChange={handleDirectionChange}
+        onCategoryChange={handleCategoryChange}
         canViewSearchFilter={canViewSearchFilter}
         canViewStatusFilter={canViewStatusFilter}
         canViewDirectionFilter={canViewDirectionFilter}
@@ -331,19 +357,21 @@ export const TransactionsPage = () => {
       />
 
       {/* Table */}
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
+      <div className="payments-module-table-shell">
         <SharedTable
           columns={columns}
-          data={paginatedPayments}
+          data={payments}
           sort={sortConfig}
           onSort={handleSort}
           rowKey={(payment) => payment.transactionId}
           emptyMessage="No transactions found"
+          className="overflow-visible"
         />
         <SharedPagination
           meta={paginationMeta}
           onPageChange={setPage}
-          onPageSizeChange={setPageSize}
+          onPageSizeChange={handlePageSizeChange}
+          className="payments-module-pagination"
         />
       </div>
 

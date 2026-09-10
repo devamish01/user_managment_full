@@ -70,20 +70,29 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
 
   /* ── Global bootstrap sequence (no auth here) ───────────────────── */
   const loadInitialData = React.useCallback(async () => {
+    if (auth.loading) {
+      setAuthorizationReady(false);
+      return;
+    }
+
+    if (!auth.isAuthenticated) {
+      setAuthorizationReady(true);
+      return;
+    }
+
+    setAuthorizationReady(false);
+
     try {
       await rolesStore.getRoles();
       await permissionsStore.getPermissions();
-
-      // await getLogs();
       await navigationStore.getNavigation();
-
     } catch (err) {
       console.error("Failed to load initial data", err);
     } finally {
       setAuthorizationReady(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [auth.isAuthenticated, auth.loading, rolesStore.getRoles, permissionsStore.getPermissions, navigationStore.getNavigation]);
 
   React.useEffect(() => {
     loadInitialData();

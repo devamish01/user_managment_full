@@ -10,6 +10,19 @@ import type { ApiResponse } from "@/core/api";
 import type { PaymentRecord } from "../types";
 import { PAYMENTS, PAYMENT_DETAILS, PAYMENT_TRANSACTIONS, PAYMENT_TRANSACTION_DETAILS } from "./payment.endpoints";
 
+export interface TransactionQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  direction?: string;
+  category?: string;
+  sort?: string;
+  order?: "asc" | "desc";
+  userId?: string;
+  [key: string]: any;
+}
+
 export class PaymentApi {
   static getPayments(userId?: string): Promise<ApiResponse<PaymentRecord[]>> {
     const params = userId ? `?userId=${encodeURIComponent(userId)}` : "";
@@ -32,8 +45,8 @@ export class PaymentApi {
     return api.delete<void>(PAYMENT_DETAILS(transactionId));
   }
 
-  static getTransactions(): Promise<ApiResponse<PaymentRecord[]>> {
-    return api.get<PaymentRecord[]>(PAYMENT_TRANSACTIONS);
+  static getTransactions(params?: TransactionQueryParams): Promise<ApiResponse<PaymentRecord[]>> {
+    return api.get<PaymentRecord[]>(PAYMENT_TRANSACTIONS, { params });
   }
 
   static getTransaction(transactionId: string): Promise<ApiResponse<PaymentRecord>> {

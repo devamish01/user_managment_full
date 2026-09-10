@@ -342,23 +342,29 @@ mockClient.register("GET", "/auth/me", async () => {
   }
   return successResponse(
     {
+      id: user.id,
       userId: user.id,
       username: user.username,
-
+      name: user.name,
       firstName: user.firstName,
       lastName: user.lastName,
-
       email: user.email,
-
+      phone: user.phone,
+      location: user.location,
+      address: user.address,
       role: user.role,
       status: user.status.toLowerCase(),
       roleId: user.roleId,
-
       approvedAt: user.approvedAt,
       approvedBy: user.approvedBy,
-
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+      bio: user.bio,
+      avatar: user.avatar,
+      avatarColor: user.avatarColor,
+      lastActive: user.lastActive,
+      jobTitle: user.jobTitle,
+      isProtected: user.isProtected,
     },
     "User fetched successfully",
   );
@@ -441,8 +447,10 @@ mockClient.register("POST", "/auth/login", async ({ body }) => {
         expiresAt: mockAuth.expiresAt,
       },
       user: {
+        id: user.id,
         userId: user.id,
         username: user.username,
+        name: user.name,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,

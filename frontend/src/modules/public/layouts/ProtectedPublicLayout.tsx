@@ -14,10 +14,8 @@ import { PublicLayout } from "./PublicLayout";
  * This ensures consistent navigation experience across all public pages (Home, About, Contact, etc.)
  */
 export const ProtectedPublicLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-  const location = useLocation();
+  const { loading } = useAuth();
 
-  // Show loading state while auth is being determined
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -26,21 +24,10 @@ export const ProtectedPublicLayout: React.FC<{ children?: React.ReactNode }> = (
     );
   }
 
-  // Hide auth buttons on auth pages (login, register)
-  const isAuthPage = location.pathname === "/login" || location.pathname === "/register";
-
-  if (isAuthenticated) {
-    return (
-      <AdminLayout>
-        {children || <Outlet />}
-      </AdminLayout>
-    );
-  }
-
   return (
-    <PublicLayout hideAuthButtons={isAuthPage}>
+    <AdminLayout>
       {children || <Outlet />}
-    </PublicLayout>
+    </AdminLayout>
   );
 };
 

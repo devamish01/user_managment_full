@@ -7,16 +7,29 @@
 
 import * as React from "react";
 import type { PaymentRecord, PaymentTimelineEntry } from "../types";
-import { PaymentApi } from "../api";
+import { PaymentApi, type TransactionQueryParams } from "../api";
 import { getErrorMessage } from "@/core/api/errorUtils";
+import type { PaginationMeta } from "@/shared/types/pagination";
+
+export interface TransactionStats {
+  total: number;
+  totalIn: number;
+  totalOut: number;
+  pending: number;
+  completed: number;
+  rejected: number;
+  refunded: number;
+}
 
 export interface PaymentsStoreState {
   payments: PaymentRecord[];
   loading: boolean;
   error: string | null;
+  pagination: PaginationMeta | null;
+  stats: TransactionStats | null;
   getPayments: (userId?: string) => Promise<void>;
   getPaymentsByUserId: (userId: string) => Promise<PaymentRecord[]>;
-  getTransactions: () => Promise<void>;
+  getTransactions: (params?: TransactionQueryParams) => Promise<void>;
   getPaymentById: (transactionId: string) => Promise<PaymentRecord | null>;
   createPayment: (data: Partial<PaymentRecord>) => Promise<PaymentRecord | null>;
   updatePayment: (transactionId: string, data: Partial<PaymentRecord>, correctionReason?: string) => Promise<PaymentRecord | null>;
@@ -30,6 +43,8 @@ export const usePaymentsStore = (): PaymentsStoreState => {
   const [payments, setPayments] = React.useState<PaymentRecord[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [pagination, setPagination] = React.useState<PaginationMeta | null>(null);
+  const [stats, setStats] = React.useState<TransactionStats | null>(null);
 
   const getPayments = React.useCallback(async (userId?: string) => {
     setLoading(true);
@@ -71,13 +86,28 @@ export const usePaymentsStore = (): PaymentsStoreState => {
     }
   }, []);
 
-  const getTransactions = React.useCallback(async () => {
+  const getTransactions = React.useCallback(async (params?: TransactionQueryParams) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await PaymentApi.getTransactions();
+      const res = await PaymentApi.getTransactions(params);
       if (res.success && res.data) {
         setPayments(res.data);
+        if (res.meta?.pagination && typeof res.meta.pagination === 'object' && 'page' in res.meta.pagination) {
+          setPagination(res.meta.pagination as PaginationMeta);
+        }
+        if (res.meta?.stats) {
+          const backendStats = res.meta.stats as any;
+          setStats({
+            total: backendStats.total ?? 0,
+            totalIn: backendStats.totalIn ?? 0,
+            totalOut: backendStats.totalOut ?? 0,
+            pending: backendStats.pending ?? 0,
+            completed: backendStats.completed ?? 0,
+            rejected: backendStats.rejected ?? 0,
+            refunded: backendStats.refunded ?? 0,
+          });
+        }
       } else {
         console.error('Failed to load transactions:', res.message);
         setError(res.message || "Failed to load transactions");
@@ -292,6 +322,8 @@ export const usePaymentsStore = (): PaymentsStoreState => {
     payments, 
     loading, 
     error, 
+    pagination,
+    stats,
     getPayments, 
     getTransactions,
     getPaymentById, 

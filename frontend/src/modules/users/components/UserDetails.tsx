@@ -374,7 +374,7 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
           <ArrowLeft size={16} /> Back to Users List
         </SharedButton>
       </div>
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="mx-auto w-full max-w-[1500px] space-y-6 px-2 sm:px-4 lg:px-6">
         {/* User Header */}
         <div className="rounded-xl border border-border bg-card shadow-sm">
           <div className="flex flex-col gap-4 py-6 px-6 sm:flex-row sm:items-center sm:justify-between">
@@ -408,227 +408,252 @@ export const UserDetails: React.FC<UserDetailsProps> = ({ id, onBack }) => {
           </div>
         </div>
 
-        {!isEditing ? (
-          <div className="space-y-6 animate-in">
-            {/* Personal Information + Account Information side by side */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {/* Personal Information */}
-              <div className="rounded-xl border border-border bg-card shadow-sm">
-                <div className="p-6 border-b border-border">
-                  <div className="flex items-center gap-2">
-                    <User2 className="h-4 w-4 text-indigo-500" />
-                    <h3 className="text-lg font-semibold">Personal Information</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">Profile details for this user.</p>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2">
-                    <div className="space-y-1.5"><label className="text-sm font-medium">First Name</label><p className="text-lg font-medium">{user.firstName}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Last Name</label><p className="text-lg font-medium">{user.lastName}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Email</label><p className="font-medium">{user.email}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Mobile Number</label><p className="font-medium">{user.phone || "—"}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Location</label><p className="font-medium">{user.location || "—"}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Job Title</label><p className="font-medium">{user.jobTitle || "—"}</p></div>
-                    <div className="sm:col-span-2 space-y-1.5"><label className="text-sm font-medium">Address</label><p className="font-medium">{user.address || "—"}</p></div>
-                    <div className="sm:col-span-2 space-y-1.5"><label className="text-sm font-medium">Bio</label><p className="font-normal text-muted-foreground">{user.bio || "—"}</p></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Account Information (read-only for most fields) */}
-              <div className="rounded-xl border border-border bg-card shadow-sm">
-                <div className="p-6 border-b border-border">
-                  <div className="flex items-center gap-2">
-                    <BadgeCheck className="h-4 w-4 text-emerald-500" />
-                    <h3 className="text-lg font-semibold">Account Information</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">Account metadata. Role, status and dates are read-only.</p>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2">
-                    <div className="space-y-1.5"><label className="text-sm font-medium">User ID</label><p className="font-mono text-sm bg-muted px-3 py-1.5 rounded-md w-fit">{user.id}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Username</label><p className="font-medium">{user.username || "—"}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Role</label><p className="font-medium">{role?.name || "—"}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Status</label><SharedBadge variant={statusToBadgeVariant(user.status)}>{user.status}</SharedBadge></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Join Date</label><p className="font-medium">{formatFullDate(user.createdAt)}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Last Login</label><p className="font-medium">—</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Account Created</label><p className="font-medium">{formatFullDate(user.createdAt)}</p></div>
-                    <div className="space-y-1.5"><label className="text-sm font-medium">Last Updated</label><p className="font-medium">{formatFullDate(user.updatedAt)}</p></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Security & Privacy */}
+        <div className="space-y-6 animate-in">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div className="rounded-xl border border-border bg-card shadow-sm">
               <div className="p-6 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                  <h3 className="text-lg font-semibold">Security & Privacy</h3>
+                  <User2 className="h-4 w-4 text-indigo-500" />
+                  <h3 className="text-lg font-semibold">Personal Information</h3>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">Account security settings and activity.</p>
+                <p className="text-sm text-muted-foreground mt-1">Profile details for this user.</p>
               </div>
               <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <ShieldCheck size={18} className="text-emerald-500" />
-                      <div>
-                        <p className="text-sm font-medium">Two-Factor Auth</p>
-                        <p className="text-xs text-muted-foreground">Enabled via Authenticator</p>
-                      </div>
-                    </div>
-                    <SharedBadge variant="success">Active</SharedBadge>
+                <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">First Name</label>
+                    {isEditing ? (
+                      <SharedInput value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
+                    ) : (
+                      <p className="text-lg font-medium">{user.firstName}</p>
+                    )}
                   </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <Lock size={18} className="text-blue-500" />
-                      <div>
-                        <p className="text-sm font-medium">Last Login</p>
-                        <p className="text-xs text-muted-foreground">—</p>
-                      </div>
-                    </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Last Name</label>
+                    {isEditing ? (
+                      <SharedInput value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
+                    ) : (
+                      <p className="text-lg font-medium">{user.lastName}</p>
+                    )}
                   </div>
-                  {canResetPassword && (
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Key size={18} className="text-orange-500" />
-                        <div>
-                          <p className="text-sm font-medium">Reset Password</p>
-                          <p className="text-xs text-muted-foreground">Generate a new password for this user</p>
-                        </div>
-                      </div>
-                      <SharedButton variant="outline" size="sm" onClick={openResetPassword}>
-                        <Key size={14} className="mr-2" /> Reset Password
-                      </SharedButton>
-                    </div>
-                  )}
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Email</label>
+                    {isEditing ? (
+                      <SharedInput type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                    ) : (
+                      <p className="font-medium">{user.email}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Mobile Number</label>
+                    {isEditing ? (
+                      <SharedInput value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                    ) : (
+                      <p className="font-medium">{user.phone || "—"}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Location</label>
+                    {isEditing ? (
+                      <SharedInput value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+                    ) : (
+                      <p className="font-medium">{user.location || "—"}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium">Job Title</label>
+                    {isEditing ? (
+                      <SharedInput value={form.jobTitle} onChange={(e) => setForm({ ...form, jobTitle: e.target.value })} />
+                    ) : (
+                      <p className="font-medium">{user.jobTitle || "—"}</p>
+                    )}
+                  </div>
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <label className="text-sm font-medium">Address</label>
+                    {isEditing ? (
+                      <SharedInput value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                    ) : (
+                      <p className="font-medium">{user.address || "—"}</p>
+                    )}
+                  </div>
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <label className="text-sm font-medium">Bio</label>
+                    {isEditing ? (
+                      <textarea
+                        className="flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground"
+                        value={form.bio}
+                        onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                      />
+                    ) : (
+                      <p className="font-normal text-muted-foreground">{user.bio || "—"}</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Payments */}
-            {canViewPaymentsSection && (
             <div className="rounded-xl border border-border bg-card shadow-sm">
               <div className="p-6 border-b border-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">Payments</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Aggregated payment activity for <span className="font-medium text-foreground">{user.firstName} {user.lastName}</span>.</p>
-                  </div>
-                  <SharedButton variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
-                    {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    {expanded ? "Collapse" : "Expand"}
-                  </SharedButton>
+                <div className="flex items-center gap-2">
+                  <BadgeCheck className="h-4 w-4 text-emerald-500" />
+                  <h3 className="text-lg font-semibold">Account Information</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">Account metadata. Role, status and dates are read-only.</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2">
+                  <div className="space-y-1.5"><label className="text-sm font-medium">User ID</label><p className="font-mono text-sm bg-muted px-3 py-1.5 rounded-md w-fit">{user.id}</p></div>
+                  <div className="space-y-1.5"><label className="text-sm font-medium">Username</label><p className="font-medium">{user.username || "—"}</p></div>
+                  <div className="space-y-1.5"><label className="text-sm font-medium">Role</label><p className="font-medium">{role?.name || "—"}</p></div>
+                  <div className="space-y-1.5"><label className="text-sm font-medium">Status</label><SharedBadge variant={statusToBadgeVariant(user.status)}>{user.status}</SharedBadge></div>
+                  <div className="space-y-1.5"><label className="text-sm font-medium">Join Date</label><p className="font-medium">{formatFullDate(user.createdAt)}</p></div>
+                  <div className="space-y-1.5"><label className="text-sm font-medium">Last Login</label><p className="font-medium">—</p></div>
+                  <div className="space-y-1.5"><label className="text-sm font-medium">Account Created</label><p className="font-medium">{formatFullDate(user.createdAt)}</p></div>
+                  <div className="space-y-1.5"><label className="text-sm font-medium">Last Updated</label><p className="font-medium">{formatFullDate(user.updatedAt)}</p></div>
                 </div>
               </div>
-
-              {expanded && (
-                <div className="p-6 space-y-6">
-                  {loadingPayments ? (
-                    <div className="flex items-center justify-center py-8">
-                      <p className="text-muted-foreground">Loading payments...</p>
-                    </div>
-                  ) : paymentError ? (
-                    <div className="text-center py-8 text-destructive">
-                      <p>Failed to load payments: {paymentError}</p>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Payment Stats */}
-                      {canViewPaymentStats && (
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        <div className="p-4 border rounded-lg">
-                          <p className="text-xs text-muted-foreground">Total Transactions</p>
-                          <p className="text-2xl font-bold text-foreground">{paymentStats.total}</p>
-                        </div>
-                        {canViewPaymentAmount && (
-                        <>
-                        <div className="p-4 border rounded-lg">
-                          <p className="text-xs text-muted-foreground">Total Credit</p>
-                          <p className="text-2xl font-bold text-emerald-600">{formatCurrency(paymentStats.totalCredit)}</p>
-                        </div>
-                        <div className="p-4 border rounded-lg">
-                          <p className="text-xs text-muted-foreground">Total Debit</p>
-                          <p className="text-2xl font-bold text-red-600">{formatCurrency(paymentStats.totalDebit)}</p>
-                        </div>
-                        <div className="p-4 border rounded-lg">
-                          <p className="text-xs text-muted-foreground">Net Amount</p>
-                          <p className="text-2xl font-bold">{formatCurrency(paymentStats.totalCredit - paymentStats.totalDebit)}</p>
-                        </div>
-                        <div className="p-4 border rounded-lg">
-                          <p className="text-xs text-muted-foreground">First Payment</p>
-                          <p className="text-lg font-medium">{userPayments.length > 0 ? formatFullDate([...userPayments].sort((a, b) => new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime())[0].paymentDate) : "—"}</p>
-                        </div>
-                        <div className="p-4 border rounded-lg">
-                          <p className="text-xs text-muted-foreground">Last Payment</p>
-                          <p className="text-lg font-medium">{userPayments.length > 0 ? formatFullDate([...userPayments].sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime())[0].paymentDate) : "—"}</p>
-                        </div>
-                        </>
-                        )}
-                      </div>
-                      )}
-
-                      {/* Recent Transactions Table */}
-                      {canViewRecentTransactions && (
-                      <div className="border-t border-border pt-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <h4 className="text-base font-semibold">Recent Transactions</h4>
-                            <p className="text-sm text-muted-foreground">Showing latest {recentTransactions.length} of {userPayments.length} transactions.</p>
-                          </div>
-                          <SharedButton variant="outline" size="sm" onClick={handleViewAllTransactions}>View All Transactions</SharedButton>
-                        </div>
-                        {recentTransactions.length === 0 ? (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <Receipt className="h-7 w-7 mx-auto mb-2 opacity-50" />
-                            <p>No transactions yet</p>
-                            <p className="text-sm">This user has no payment records in the Payments module.</p>
-                          </div>
-                        ) : (
-                          <SharedTable
-                            columns={transactionColumns}
-                            data={recentTransactions}
-                            rowKey={(row) => row.id}
-                            emptyMessage="No transactions found."
-                          />
-                        )}
-                      </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
             </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card shadow-sm">
+            <div className="p-6 border-b border-border">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                <h3 className="text-lg font-semibold">Security & Privacy</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">Account security settings and activity.</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck size={18} className="text-emerald-500" />
+                    <div>
+                      <p className="text-sm font-medium">Two-Factor Auth</p>
+                      <p className="text-xs text-muted-foreground">Enabled via Authenticator</p>
+                    </div>
+                  </div>
+                  <SharedBadge variant="success">Active</SharedBadge>
+                </div>
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Lock size={18} className="text-blue-500" />
+                    <div>
+                      <p className="text-sm font-medium">Last Login</p>
+                      <p className="text-xs text-muted-foreground">—</p>
+                    </div>
+                  </div>
+                </div>
+                {canResetPassword && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Key size={18} className="text-orange-500" />
+                      <div>
+                        <p className="text-sm font-medium">Reset Password</p>
+                        <p className="text-xs text-muted-foreground">Generate a new password for this user</p>
+                      </div>
+                    </div>
+                    <SharedButton variant="outline" size="sm" onClick={openResetPassword}>
+                      <Key size={14} className="mr-2" /> Reset Password
+                    </SharedButton>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {canViewPaymentsSection && (
+          <div className="rounded-xl border border-border bg-card shadow-sm">
+            <div className="p-6 border-b border-border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">Payments</h3>
+                  <p className="text-sm text-muted-foreground mt-1">Aggregated payment activity for <span className="font-medium text-foreground">{user.firstName} {user.lastName}</span>.</p>
+                </div>
+                <SharedButton variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
+                  {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  {expanded ? "Collapse" : "Expand"}
+                </SharedButton>
+              </div>
+            </div>
+
+            {expanded && (
+              <div className="p-6 space-y-6">
+                {loadingPayments ? (
+                  <div className="flex items-center justify-center py-8">
+                    <p className="text-muted-foreground">Loading payments...</p>
+                  </div>
+                ) : paymentError ? (
+                  <div className="text-center py-8 text-destructive">
+                    <p>Failed to load payments: {paymentError}</p>
+                  </div>
+                ) : (
+                  <>
+                    {canViewPaymentStats && (
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-xs text-muted-foreground">Total Transactions</p>
+                        <p className="text-2xl font-bold text-foreground">{paymentStats.total}</p>
+                      </div>
+                      {canViewPaymentAmount && (
+                      <>
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-xs text-muted-foreground">Total Credit</p>
+                        <p className="text-2xl font-bold text-emerald-600">{formatCurrency(paymentStats.totalCredit)}</p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-xs text-muted-foreground">Total Debit</p>
+                        <p className="text-2xl font-bold text-red-600">{formatCurrency(paymentStats.totalDebit)}</p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-xs text-muted-foreground">Net Amount</p>
+                        <p className="text-2xl font-bold">{formatCurrency(paymentStats.totalCredit - paymentStats.totalDebit)}</p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-xs text-muted-foreground">First Payment</p>
+                        <p className="text-lg font-medium">{userPayments.length > 0 ? formatFullDate([...userPayments].sort((a, b) => new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime())[0].paymentDate) : "—"}</p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <p className="text-xs text-muted-foreground">Last Payment</p>
+                        <p className="text-lg font-medium">{userPayments.length > 0 ? formatFullDate([...userPayments].sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime())[0].paymentDate) : "—"}</p>
+                      </div>
+                      </>
+                      )}
+                    </div>
+                    )}
+
+                    {canViewRecentTransactions && (
+                    <div className="border-t border-border pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h4 className="text-base font-semibold">Recent Transactions</h4>
+                          <p className="text-sm text-muted-foreground">Showing latest {recentTransactions.length} of {userPayments.length} transactions.</p>
+                        </div>
+                        <SharedButton variant="outline" size="sm" onClick={handleViewAllTransactions}>View All Transactions</SharedButton>
+                      </div>
+                      {recentTransactions.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Receipt className="h-7 w-7 mx-auto mb-2 opacity-50" />
+                          <p>No transactions yet</p>
+                          <p className="text-sm">This user has no payment records in the Payments module.</p>
+                        </div>
+                      ) : (
+                        <SharedTable
+                          columns={transactionColumns}
+                          data={recentTransactions}
+                          rowKey={(row) => row.id}
+                          emptyMessage="No transactions found."
+                        />
+                      )}
+                    </div>
+                    )}
+                  </>
+                )}
+              </div>
             )}
           </div>
-        ) : (
-          <div className="rounded-xl border border-border bg-card shadow-sm">
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-1.5"><label className="text-sm font-medium">First Name *</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} /></div>
-                <div className="space-y-1.5"><label className="text-sm font-medium">Last Name *</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} /></div>
-                <div className="space-y-1.5"><label className="text-sm font-medium">Email *</label><input type="email" className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-                <div className="space-y-1.5"><label className="text-sm font-medium">Mobile Number</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
-                <div className="space-y-1.5"><label className="text-sm font-medium">Username</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} /></div>
-                <div className="space-y-1.5"><label className="text-sm font-medium">Location</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
-                <div className="space-y-1.5"><label className="text-sm font-medium">Job Title</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.jobTitle} onChange={(e) => setForm({ ...form, jobTitle: e.target.value })} /></div>
-                <div className="space-y-1.5"><label className="text-sm font-medium">Role</label><select className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })}>{roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select></div>
-                <div className="md:col-span-2 space-y-1.5"><label className="text-sm font-medium">Status</label><select className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Status })}><option value="active">Active</option><option value="inactive">Inactive</option><option value="blocked">Blocked</option><option value="pending">Pending</option></select></div>
-                <div className="md:col-span-2 space-y-1.5"><label className="text-sm font-medium">Address</label><input className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-                <div className="md:col-span-2 space-y-1.5"><label className="text-sm font-medium">Bio</label><textarea className="flex min-h-[80px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} /></div>
-              </div>
-              <div className="border-t border-border pt-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2"><Hash size={14} /><span>User ID (non-editable):</span><span className="font-mono text-foreground">{user.id}</span></div>
-                <div className="flex items-center gap-2 mt-1"><Calendar size={14} /><span>Joined on:</span><span className="font-medium text-foreground">{formatFullDate(user.createdAt)} at {formatTime(user.createdAt)}</span></div>
-              </div>
-              <div className="flex justify-end gap-2 pt-4">
-                <SharedButton variant="outline" onClick={handleCancel}><X size={14} className="mr-2" /> Cancel</SharedButton>
-                <SharedButton onClick={handleSave}><Save size={14} className="mr-2" /> Save Changes</SharedButton>
-              </div>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
     <SharedModal

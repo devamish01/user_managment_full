@@ -1,0 +1,54 @@
+.auth-module-page {
+  background: hsl(var(--background));
+}
+
+.auth-module-shell,
+.auth-module-grid,
+.auth-module-side,
+.auth-module-brand-panel,
+.auth-module-form-panel,
+.auth-module-form-shell,
+.auth-module-mobile-brand,
+.auth-module-footer {
+  width: 100%;
+}
+
+.auth-module-brand {
+  display: flex;
+  align-items: center;
+}
+
+.auth-module-feature-grid {
+  max-width: 32rem;
+}
+
+.auth-module-profile-page {
+  width: 100%;
+}
+
+.auth-module-header {
+  width: 100%;
+}
+
+.auth-module-profile-shell {
+  width: 100%;
+}
+
+.auth-module-card,
+.auth-module-section-header,
+.auth-module-section-body,
+.auth-module-table-header,
+.auth-module-stat-grid {
+  width: 100%;
+}
+
+.auth-module-form-grid {
+  width: 100%;
+}
+
+@media (max-width: 1023px) {
+  .auth-module-side,
+  .auth-module-brand-panel {
+    display: none;
+  }
+}

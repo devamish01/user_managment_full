@@ -1,0 +1,32 @@
+.payments-module-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.payments-module-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .payments-module-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.payments-module-table-shell {
+  overflow: visible;
+  border-radius: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+}
+
+.payments-module-pagination {
+  margin-top: 1rem;
+  padding-left: 1rem;
+  padding-bottom: 0.5rem;
+}

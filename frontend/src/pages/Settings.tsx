@@ -10,7 +10,9 @@ import {
   Shield,
   Key,
   ShieldCheck,
-
+  Sparkles,
+  Zap,
+  Star,
   Palette,
   Eye,
   EyeOff,
@@ -32,6 +34,7 @@ import {
   Textarea,
 } from "@/components/ui";
 import { useTheme, useStore, isSuperAdmin } from "@/store";
+import type { ThemeMode } from "@/store";
 import { useToastError } from "@/core/api/toastUtils";
 import { useUsersStore } from "@/modules/users";
 import { SharedButton, SharedBadge } from "@/shared/components";
@@ -287,18 +290,25 @@ export const Settings = () => {
             <p className="text-sm text-muted-foreground">Customize how Nexus looks on this device.</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              {[
-                { value: "light", label: "Light", icon: <Sun size={20} /> },
-                { value: "dark", label: "Dark", icon: <Moon size={20} /> },
-                { value: "system", label: "System", icon: <Monitor size={20} /> },
-              ].map((t) => {
-                const active = theme === t.value;
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {(
+                [
+                  { mode: "minimal-light", label: "Minimal Light", icon: <Sun size={20} /> },
+                  { mode: "dark", label: "Dark Mode", icon: <Moon size={20} /> },
+                  { mode: "retro", label: "Retro Split-Flap", icon: <Sparkles size={20} /> },
+                  { mode: "neon", label: "Neon Glow", icon: <Zap size={20} /> },
+                  { mode: "monochrome", label: "Monochrome", icon: <Monitor size={20} /> },
+                  { mode: "glass", label: "Frosted Glass", icon: <Palette size={20} /> },
+                  { mode: "terminal", label: "Terminal", icon: <Shield size={20} /> },
+                  { mode: "luxury", label: "Luxury Gold", icon: <Star size={20} /> },
+                ] as { mode: ThemeMode; label: string; icon: React.ReactNode }[]
+              ).map((t) => {
+                const active = theme === t.mode;
                 return (
                   <button
-                    key={t.value}
+                    key={t.mode}
                     onClick={() => {
-                      if (t.value !== theme && t.value !== "system") toggle();
+                      if (theme !== t.mode) setTheme(t.mode);
                     }}
                     className={`flex flex-col items-center gap-3 rounded-xl border p-6 transition-all ${
                       active ? "border-primary bg-primary/5" : "border-border hover:bg-accent"

@@ -11,6 +11,7 @@ import { SharedButton, SharedBadge, SharedModal, SharedInput, ErrorState } from 
 import { Card, CardContent, CardHeader, CardTitle, Label, Switch, Textarea, Tabs } from "@/components/ui";
 import { RolesSkeleton } from "./RolesSkeleton";
 import type { Role } from "@/lib/types";
+import "@/modules/roles/styles/roles.css";
 
 const gradients = [
   "from-violet-500 to-indigo-600", "from-blue-500 to-cyan-500", "from-emerald-500 to-teal-500",
@@ -169,8 +170,8 @@ export const RoleAssignment = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="roles-module-page space-y-6">
+      <div className="roles-module-header flex justify-between items-center">
         <h1 className="text-3xl font-bold">Role Assignment</h1>
         <div className="flex gap-2">
           <div className="flex border rounded-lg p-1 bg-muted/40">
@@ -182,7 +183,7 @@ export const RoleAssignment = () => {
         </div>
       </div>
 
-      <div className={view === "card" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" : "space-y-2"}>
+      <div className={view === "card" ? "roles-module-grid roles-module-card-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" : "roles-module-grid roles-module-list-grid space-y-2"}>
         {roles.map(r => {
           const isSystemRole = r.createdBy === "SYSTEM";
           const isDefaultRole = r.id === "r4";
@@ -211,7 +212,7 @@ export const RoleAssignment = () => {
       </div>
 
       {role && (
-        <div className="space-y-4">
+        <div className="roles-module-role-panel space-y-4">
           <Card className="overflow-hidden">
             <div className={`h-1.5 bg-gradient-to-r ${role.color}`} />
             <CardContent className="flex justify-between items-center p-4">
@@ -228,7 +229,7 @@ export const RoleAssignment = () => {
             </CardContent>
           </Card>
           {role.createdBy === "SYSTEM" && <div className="flex items-center gap-2 p-3 bg-amber-500/10 text-amber-500 rounded-lg text-xs"><Info size={14}/> System role - cannot be modified or deleted.</div>}
-          <div className="space-y-4">
+          <div className="roles-module-permission-list space-y-4">
             {Object.keys(grouped).map(mod => <ModulePermsCard key={mod} moduleName={mod} perms={grouped[mod].perms} uiPerms={grouped[mod].uiPerms} localPerms={localPerms} toggle={toggle} locked={locked} />)}
           </div>
         </div>

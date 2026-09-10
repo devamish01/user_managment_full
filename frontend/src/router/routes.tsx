@@ -47,6 +47,7 @@ import { logsRoutes } from "@/modules/logs.routes";
 import { settingsRoutes } from "@/modules/settings.routes";
 import { overviewRoutes } from "@/modules/overview.routes";
 import { paymentsRoutes } from "@/modules/payments/routes";
+import { eventsRoutes } from "@/modules/events/routes";
 import { publicRoutes } from "@/modules/public/routes";
 import { ProtectedHomePage } from "@/modules/public/home/ProtectedHomePage";
 
@@ -79,6 +80,7 @@ const protectedFeatureRoutes: RouteObject[] = [
   ...settingsRoutes,
   ...overviewRoutes,
   ...paymentsRoutes,
+  ...eventsRoutes,
 ];
 
 export const router = createBrowserRouter([

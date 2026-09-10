@@ -33,9 +33,18 @@ export const DEFAULT_NAVIGATION: NavigationItem[] = [
     ],
   },
   {
+    id: "nav-events",
+    title: "Events",
+    order: 3,
+    visible: true,
+    children: [
+      { id: "nav-events-list", title: "Events", icon: "calendar", route: "events", permission: "pages.events", order: 1, visible: true, children: [] },
+    ],
+  },
+  {
     id: "nav-access-control",
     title: "Access Control",
-    order: 3,
+    order: 4,
     visible: true,
     children: [
       { id: "nav-assignment", title: "Role Assignment", icon: "toggle-right", route: "assignment", permission: "pages.assignment", order: 1, visible: true, children: [] },
@@ -45,7 +54,7 @@ export const DEFAULT_NAVIGATION: NavigationItem[] = [
   {
     id: "nav-system",
     title: "System",
-    order: 4,
+    order: 5,
     visible: true,
     children: [
       { id: "nav-logs", title: "Activity Logs", icon: "activity", route: "logs", permission: "pages.logs", order: 1, visible: true, children: [] },

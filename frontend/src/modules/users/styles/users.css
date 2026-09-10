@@ -1,0 +1,21 @@
+.users-module-page {
+  display: flex;
+  min-height: calc(100vh - 200px);
+  flex-direction: column;
+}
+
+.users-module-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+  padding-right: 1rem;
+  padding-bottom: 1.5rem;
+}
+
+.users-module-pagination {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 0.5rem;
+}

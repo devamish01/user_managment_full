@@ -13,6 +13,11 @@ export interface UserStats {
   pending: number;
 }
 
+/** Generic stats shape - modules can extend with their own stats */
+export interface GenericStats {
+  [key: string]: number;
+}
+
 export interface PaginationMeta {
   page: number;
   limit: number;
@@ -21,7 +26,7 @@ export interface PaginationMeta {
   hasNext: boolean;
   hasPrevious: boolean;
   /** Optional aggregate counts across the entire dataset. */
-  stats?: UserStats;
+  stats?: UserStats | GenericStats;
 }
 
 export interface PaginationState {

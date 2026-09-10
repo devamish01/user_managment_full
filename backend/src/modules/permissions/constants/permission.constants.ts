@@ -16,6 +16,8 @@ export const PERMISSION_MODULES = {
   TRANSACTIONS_UI: "Transactions UI",
   TRANSACTION_DETAILS: "Transaction Details",
   TRANSACTION_DETAILS_UI: "Transaction Details UI",
+  EVENTS: "Events",
+  EVENTS_UI: "Events UI",
 } as const;
 
 export type PermissionModule = (typeof PERMISSION_MODULES)[keyof typeof PERMISSION_MODULES];
@@ -33,6 +35,7 @@ export const DEFAULT_PERMISSIONS = [
   { permissionId: "PRM_008", id: "p008", name: "View Payments", key: "pages.payments", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show the Payments tab in the sidebar" },
   { permissionId: "PRM_009", id: "p009", name: "View Transactions", key: "pages.transactions", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show the Transactions tab in the sidebar" },
   { permissionId: "PRM_010", id: "p010", name: "View Transaction Details", key: "pages.transactions.details", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show Transaction Details page" },
+  { permissionId: "PRM_129", id: "p129", name: "View Events", key: "pages.events", module: PERMISSION_MODULES.SIDEBAR_NAVIGATION, description: "Show the Events tab in the sidebar" },
 
   // ── User Management ──
   { permissionId: "PRM_011", id: "p011", name: "Create User", key: "users.create", module: PERMISSION_MODULES.USER_MANAGEMENT, description: "Allow adding new users" },
@@ -170,6 +173,25 @@ export const DEFAULT_PERMISSIONS = [
   { permissionId: "PRM_111", id: "p111", name: "Button: Open Attachment", key: "transactions.ui_open_attachment", module: PERMISSION_MODULES.TRANSACTION_DETAILS_UI, description: "Show Open Attachment button" },
   { permissionId: "PRM_112", id: "p112", name: "Button: Download Attachment", key: "transactions.ui_download_attachment", module: PERMISSION_MODULES.TRANSACTION_DETAILS_UI, description: "Show Download Attachment button" },
   { permissionId: "PRM_113", id: "p113", name: "Button: Edit Amount", key: "transactions.ui_edit_amount", module: PERMISSION_MODULES.TRANSACTION_DETAILS_UI, description: "Show Edit Amount button" },
+
+  // ── Events ──
+  { permissionId: "PRM_114", id: "p114", name: "View Events", key: "events.view", module: PERMISSION_MODULES.EVENTS, description: "View event records" },
+  { permissionId: "PRM_115", id: "p115", name: "Create Event", key: "events.create", module: PERMISSION_MODULES.EVENTS, description: "Create new event records" },
+  { permissionId: "PRM_116", id: "p116", name: "Edit Event", key: "events.edit", module: PERMISSION_MODULES.EVENTS, description: "Edit existing event records" },
+  { permissionId: "PRM_117", id: "p117", name: "Delete Event", key: "events.delete", module: PERMISSION_MODULES.EVENTS, description: "Delete event records" },
+  { permissionId: "PRM_118", id: "p118", name: "Export Events", key: "events.export", module: PERMISSION_MODULES.EVENTS, description: "Export event records" },
+
+  // ── Events UI ──
+  { permissionId: "PRM_119", id: "p119", name: "Filter: Search Bar", key: "events.ui_search", module: PERMISSION_MODULES.EVENTS_UI, description: "Show search filter" },
+  { permissionId: "PRM_120", id: "p120", name: "Filter: Status", key: "events.ui_status", module: PERMISSION_MODULES.EVENTS_UI, description: "Show status dropdown filter" },
+  { permissionId: "PRM_121", id: "p121", name: "Filter: Category", key: "events.ui_category", module: PERMISSION_MODULES.EVENTS_UI, description: "Show category dropdown filter" },
+  { permissionId: "PRM_122", id: "p122", name: "Column: Title", key: "events.col_title", module: PERMISSION_MODULES.EVENTS_UI, description: "Show Title column" },
+  { permissionId: "PRM_123", id: "p123", name: "Column: Category", key: "events.col_category", module: PERMISSION_MODULES.EVENTS_UI, description: "Show Category column" },
+  { permissionId: "PRM_124", id: "p124", name: "Column: Date", key: "events.col_date", module: PERMISSION_MODULES.EVENTS_UI, description: "Show Date column" },
+  { permissionId: "PRM_125", id: "p125", name: "Column: Location", key: "events.col_location", module: PERMISSION_MODULES.EVENTS_UI, description: "Show Location column" },
+  { permissionId: "PRM_126", id: "p126", name: "Column: Status", key: "events.col_status", module: PERMISSION_MODULES.EVENTS_UI, description: "Show Status column" },
+  { permissionId: "PRM_127", id: "p127", name: "Column: Attendees", key: "events.col_attendees", module: PERMISSION_MODULES.EVENTS_UI, description: "Show Attendees column" },
+  { permissionId: "PRM_128", id: "p128", name: "Column: Actions", key: "events.col_actions", module: PERMISSION_MODULES.EVENTS_UI, description: "Show Actions column" },
 
 ] as const;
 

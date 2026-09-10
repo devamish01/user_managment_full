@@ -1,7 +1,7 @@
 import * as React from "react";
 import { ThemeMode, ThemeConfig, ThemeCtx } from "../context/ThemeContext";
 
-const themes: Record<ThemeMode, ThemeConfig> = {
+export const themes: Record<ThemeMode, ThemeConfig> = {
   light: {
     name: "Minimal Light",
     description: "Clean & modern",
@@ -131,7 +131,7 @@ const themes: Record<ThemeMode, ThemeConfig> = {
   },
 };
 
-const themeButtons: { mode: ThemeMode; label: string }[] = [
+export const themeButtons: { mode: ThemeMode; label: string }[] = [
   { mode: "minimal-light", label: "Minimal Light" },
   { mode: "dark", label: "Dark Mode" },
   { mode: "retro", label: "Retro Split-Flap" },
@@ -142,9 +142,147 @@ const themeButtons: { mode: ThemeMode; label: string }[] = [
   { mode: "luxury", label: "Luxury Gold" },
 ];
 
-function normalizeThemeMode(theme: ThemeMode): Exclude<ThemeMode, "light"> {
+export function normalizeThemeMode(theme: ThemeMode): Exclude<ThemeMode, "light"> {
   return theme === "light" ? "minimal-light" : theme;
 }
+
+export const themeTokens: Record<ThemeMode, Record<string, string>> = {
+  light: {
+    background: "0 0% 100%",
+    foreground: "222 47% 11%",
+    card: "0 0% 100%",
+    cardForeground: "222 47% 11%",
+    muted: "220 14% 96%",
+    mutedForeground: "220 9% 46%",
+    accent: "245 75% 58%",
+    accentForeground: "0 0% 100%",
+    border: "220 13% 91%",
+    ring: "245 75% 58%",
+    input: "220 13% 91%",
+    sidebar: "222 47% 11%",
+    sidebarForeground: "220 14% 96%",
+  },
+  "minimal-light": {
+    background: "0 0% 100%",
+    foreground: "222 47% 11%",
+    card: "0 0% 100%",
+    cardForeground: "222 47% 11%",
+    muted: "220 14% 96%",
+    mutedForeground: "220 9% 46%",
+    accent: "245 75% 58%",
+    accentForeground: "0 0% 100%",
+    border: "220 13% 91%",
+    ring: "245 75% 58%",
+    input: "220 13% 91%",
+    sidebar: "222 47% 11%",
+    sidebarForeground: "220 14% 96%",
+  },
+  dark: {
+    background: "222 47% 6%",
+    foreground: "210 40% 98%",
+    card: "222 47% 9%",
+    cardForeground: "210 40% 98%",
+    muted: "217 33% 15%",
+    mutedForeground: "215 20% 65%",
+    accent: "245 82% 67%",
+    accentForeground: "222 47% 11%",
+    border: "217 33% 18%",
+    ring: "245 82% 67%",
+    input: "217 33% 18%",
+    sidebar: "222 47% 4%",
+    sidebarForeground: "210 40% 98%",
+  },
+  retro: {
+    background: "44 90% 95%",
+    foreground: "33 45% 18%",
+    card: "39 80% 90%",
+    cardForeground: "33 45% 18%",
+    muted: "39 70% 85%",
+    mutedForeground: "28 55% 30%",
+    accent: "24 60% 20%",
+    accentForeground: "40 95% 90%",
+    border: "30 60% 78%",
+    ring: "24 60% 20%",
+    input: "39 80% 90%",
+    sidebar: "25 60% 18%",
+    sidebarForeground: "40 95% 90%",
+  },
+  neon: {
+    background: "222 47% 6%",
+    foreground: "190 95% 60%",
+    card: "220 30% 12%",
+    cardForeground: "190 95% 70%",
+    muted: "220 20% 18%",
+    mutedForeground: "190 80% 70%",
+    accent: "190 95% 60%",
+    accentForeground: "220 20% 12%",
+    border: "190 80% 50%",
+    ring: "190 95% 60%",
+    input: "220 20% 18%",
+    sidebar: "220 20% 8%",
+    sidebarForeground: "190 95% 80%",
+  },
+  monochrome: {
+    background: "220 14% 96%",
+    foreground: "222 47% 11%",
+    card: "220 14% 90%",
+    cardForeground: "222 47% 11%",
+    muted: "220 14% 85%",
+    mutedForeground: "220 9% 46%",
+    accent: "220 10% 20%",
+    accentForeground: "0 0% 100%",
+    border: "220 13% 80%",
+    ring: "220 10% 20%",
+    input: "220 13% 80%",
+    sidebar: "220 14% 14%",
+    sidebarForeground: "220 14% 96%",
+  },
+  glass: {
+    background: "248 100% 96%",
+    foreground: "222 47% 11%",
+    card: "0 0% 100%",
+    cardForeground: "222 47% 11%",
+    muted: "260 100% 97%",
+    mutedForeground: "220 9% 46%",
+    accent: "245 75% 58%",
+    accentForeground: "0 0% 100%",
+    border: "0 0% 100%",
+    ring: "245 75% 58%",
+    input: "0 0% 100%",
+    sidebar: "248 100% 96%",
+    sidebarForeground: "222 47% 11%",
+  },
+  terminal: {
+    background: "0 0% 0%",
+    foreground: "120 100% 45%",
+    card: "120 40% 12%",
+    cardForeground: "120 100% 60%",
+    muted: "120 30% 10%",
+    mutedForeground: "120 80% 60%",
+    accent: "120 100% 45%",
+    accentForeground: "0 0% 0%",
+    border: "120 40% 24%",
+    ring: "120 100% 45%",
+    input: "120 30% 10%",
+    sidebar: "0 0% 0%",
+    sidebarForeground: "120 100% 45%",
+  },
+  luxury: {
+    background: "30 13% 7%",
+    foreground: "45 90% 90%",
+    card: "30 10% 14%",
+    cardForeground: "45 90% 90%",
+    muted: "30 10% 18%",
+    mutedForeground: "45 90% 80%",
+    accent: "42 100% 62%",
+    accentForeground: "30 12% 8%",
+    border: "42 80% 55%",
+    ring: "42 100% 62%",
+    input: "30 10% 18%",
+    sidebar: "30 13% 5%",
+    sidebarForeground: "45 90% 90%",
+  },
+};
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setTheme] = React.useState<ThemeMode>(() => {
@@ -157,31 +295,15 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   React.useEffect(() => {
     const root = document.documentElement;
     const normalizedTheme = normalizeThemeMode(theme);
-    const themeConfig = themes[normalizedTheme];
+    const palette = themeTokens[normalizedTheme];
+    const darkThemeSet = new Set<ThemeMode>(["dark", "neon", "terminal", "luxury"]);
 
-    // Remove all theme classes
-    Object.values(themes).forEach((t) => {
-      root.classList.remove(...t.background.split(" "));
-      root.classList.remove(...t.foreground.split(" "));
-      root.classList.remove(...t.card.split(" "));
-      root.classList.remove(...t.cardForeground.split(" "));
-      root.classList.remove(...t.muted.split(" "));
-      root.classList.remove(...t.mutedForeground.split(" "));
-      root.classList.remove(...t.accent.split(" "));
-      root.classList.remove(...t.accentForeground.split(" "));
-      root.classList.remove(...t.border.split(" "));
-      root.classList.remove(...t.shadow.split(" "));
-      if (t.fontClass) {
-        root.classList.remove(...t.fontClass.split(" "));
-      }
+    Object.entries(palette).forEach(([key, value]) => {
+      root.style.setProperty(`--${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`, value);
     });
 
-    // Apply current theme
-    root.classList.add(...themeConfig.background.split(" "));
-    root.classList.add(...themeConfig.foreground.split(" "));
-    if (themeConfig.fontClass) {
-      root.classList.add(...themeConfig.fontClass.split(" "));
-    }
+    root.classList.toggle("dark", darkThemeSet.has(normalizedTheme));
+    root.dataset.theme = normalizedTheme;
 
     localStorage.setItem("theme", theme);
   }, [theme]);
@@ -193,5 +315,3 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 export default ThemeProvider;
-
-export { themes, themeButtons };

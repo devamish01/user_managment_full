@@ -5,7 +5,7 @@
  * In create mode, user selection is required.
  */
 
-import { useState, useEffect, FormEvent, ChangeEvent } from "react";
+import { useState, useEffect, useCallback, FormEvent, ChangeEvent } from "react";
 import { Save, Upload, FileImage, X, Loader2, AlertCircle } from "lucide-react";
 import { SharedButton } from "@/shared/components/SharedButton";
 import { SharedInput } from "@/shared/components/SharedInput";
@@ -13,11 +13,12 @@ import { SharedSelect } from "@/shared/components/SharedSelect";
 import { SharedSearchSelect } from "@/shared/components/SharedSearchSelect";
 import { SharedModal } from "@/shared/components/SharedModal";
 import { SharedTextarea } from "@/shared/components/SharedTextarea";
-import { mockUsers } from "@/mocks/users";
 import { formatCurrency, formatDate } from "@/lib/helpers";
 import { cn } from "@/shared/utils/cn";
+import { useUsersStore } from "@/modules/users/store/users.store";
 
 import type { PaymentRecord, PaymentStatus, PaymentCategory, PaymentMethod, PaymentDirection, PaymentSource, PaymentTimelineEntry } from "@/modules/payments/types";
+import type { User } from "@/lib/types";
 
 interface TransactionFormDialogProps {
   open: boolean;
@@ -45,6 +46,21 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
   const [formError, setFormError] = useState<string | null>(null);
   const [correctionReason, setCorrectionReason] = useState("");
   const [showCorrectionReason, setShowCorrectionReason] = useState(false);
+
+  // Users store for real user data
+  const { users, loading: usersLoading, getUsers } = useUsersStore();
+
+  // Load users when dialog opens (for create mode)
+  const loadUsers = useCallback(async () => {
+    if (!isEditMode) {
+      await getUsers({ page: 1, limit: 50, sort: "name", order: "asc" });
+    }
+  }, [isEditMode, getUsers]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
   // Load payment data when in edit mode
   useEffect(() => {
     if (payment) {
@@ -76,14 +92,6 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
       setFormError(null);
     }
   }, [payment, isEditMode]);
-
-  // Auto-set user when userId changes (for create mode)
-  useEffect(() => {
-    if (!isEditMode && userId) {
-      mockUsers.find((u) => u.id === userId);
-      // User is found but we don't need to store it separately
-    }
-  }, [userId, isEditMode]);
 
   if (!open) return null;
 
@@ -117,7 +125,7 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
       return;
     }
 
-    const selectedUserData = mockUsers.find((u) => u.id === userId);
+    const selectedUserData = users.find((u: User) => u.id === userId);
     const selectedUserName = selectedUserData?.name || payment?.userName || "Unknown User";
     if (!selectedUserData) {
       setFormError("Selected user not found");
@@ -313,7 +321,7 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
             <SharedSearchSelect
               value={userId}
               onValueChange={(value) => setUserId(value)}
-              options={mockUsers.map((u) => ({ 
+              options={users.map((u: User) => ({ 
                 value: u.id, 
                 label: u.name, 
                 description: u.email 
@@ -321,7 +329,7 @@ export function TransactionFormDialog({ open, onClose, payment, onSave, isLoadin
               placeholder="Select a user"
               disabled={isEditMode}
               searchPlaceholder="Search users by name or email..."
-              noResultsMessage="No users found"
+              noResultsMessage={usersLoading ? "Loading users..." : users.length === 0 ? "No users found" : "No users found"}
             />
           </div>
 

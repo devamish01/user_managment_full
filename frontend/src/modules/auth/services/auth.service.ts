@@ -29,7 +29,18 @@ export class AuthService {
 
   static async getCurrentUser(): Promise<User | null> {
     const res = await AuthApi.getCurrentUser();
-    return res.success ? res.data : null;
+    if (!res.success || !res.data) return null;
+
+    const user = res.data as Partial<User> & { userId?: string };
+    return {
+      ...user,
+      id: user.id ?? user.userId ?? "",
+      name:
+        user.name ||
+        [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+        user.username ||
+        "",
+    } as User;
   }
 
   static async login(credentials: { email: string; password: string }): Promise<AuthSession> {

@@ -10,19 +10,21 @@ import * as React from "react";
 import { Link } from "react-router-dom";
 import { RegisterCard } from "../components/RegisterCard";
 import { cn } from "@/utils/cn";
+import "@/modules/auth/styles/auth.css";
 
 export const RegisterPage: React.FC = () => (
   <div className={cn(
+    "auth-module-page",
     "min-h-screen w-full flex items-center justify-center p-6 sm:p-10 lg:p-16",
     "bg-background"
   )}>
-    <div className="w-full max-w-6xl">
-      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-10 lg:gap-16">
+    <div className="auth-module-shell w-full max-w-6xl">
+      <div className="auth-module-grid grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-10 lg:gap-16">
         {/* Left side - Branding/Features */}
-        <section className="hidden lg:block min-h-[580px] flex flex-col justify-center">
-          <div className="relative z-10 max-w-2xl w-full text-center">
+        <section className="auth-module-side hidden lg:block min-h-[580px] flex flex-col justify-center">
+          <div className="auth-module-brand-panel relative z-10 max-w-2xl w-full text-center">
             {/* Brand */}
-            <div className="flex items-center gap-3 justify-center mb-6">
+            <div className="auth-module-brand flex items-center gap-3 justify-center mb-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70">
                 <span className="font-black text-primary-foreground text-xl">N</span>
               </div>
@@ -40,7 +42,7 @@ export const RegisterPage: React.FC = () => (
             </p>
 
             {/* Feature highlights - matching HomePage What You Can Do */}
-            <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto animate-fade-in-up">
+            <div className="auth-module-feature-grid grid grid-cols-2 gap-4 max-w-lg mx-auto animate-fade-in-up">
               <div className="flex items-center gap-3 p-3 rounded-lg bg-card border border-border text-left">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v12a2 2 0 002 2z"/></svg>
@@ -82,15 +84,15 @@ export const RegisterPage: React.FC = () => (
         </section>
         
         {/* Right side - Register Form Card */}
-        <section className="flex items-center justify-center min-h-[580px] lg:min-h-[580px]">
-          <div className="w-full max-w-lg lg:max-w-xl">
+        <section className="auth-module-form-panel flex items-center justify-center min-h-[580px] lg:min-h-[580px]">
+          <div className="auth-module-form-shell w-full max-w-lg lg:max-w-xl">
             <RegisterCard />
           </div>
         </section>
         
         {/* Mobile branding - shown on small screens */}
-        <section className="lg:hidden py-10 text-center">
-          <div className="flex items-center gap-3 justify-center mb-6">
+        <section className="auth-module-mobile-brand lg:hidden py-10 text-center">
+          <div className="auth-module-brand flex items-center gap-3 justify-center mb-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70">
               <span className="font-black text-primary-foreground text-xl">N</span>
             </div>
@@ -106,7 +108,7 @@ export const RegisterPage: React.FC = () => (
       </div>
       
       {/* Footer links */}
-      <div className="mt-10 lg:mt-16 text-center">
+      <div className="auth-module-footer mt-10 lg:mt-16 text-center">
         <p className="text-sm text-muted-foreground">
           By continuing, you agree to our{" "}
           <Link to="/terms" className="underline hover:text-primary">Terms of Service</Link>

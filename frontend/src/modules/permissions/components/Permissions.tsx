@@ -15,6 +15,7 @@ import { useToastError } from "@/core/api/toastUtils";
 import usePermissionsStore from "../store/permissions.store";
 import { PermissionsSkeleton } from "./PermissionsSkeleton";
 import type { Permission } from "@/lib/types";
+import "@/modules/permissions/styles/permissions.css";
 
 const moduleIcons: Record<string, React.ReactNode> = {
   "Sidebar Navigation": <Activity size={18} />,
@@ -146,13 +147,13 @@ export const Permissions = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="permissions-module-page space-y-6">
+      <div className="permissions-module-header flex justify-between items-center">
         <h1 className="text-3xl font-bold">Permissions</h1>
         <SharedButton onClick={() => { setEditing({ name: "", key: "", module: baseModules[0] || "Settings", description: "" }); setCreating(true); }}><Plus size={14} className="mr-2"/> New Permission</SharedButton>
       </div>
       <Card><CardContent className="p-4"><SharedSearch value={search} onChange={setSearch} placeholder="Search permissions..."/></CardContent></Card>
-      <div className="space-y-4">{Object.keys(grouped).map(key => <ModuleCard key={key} moduleName={key} perms={grouped[key].perms} uiPerms={grouped[key].uiPerms} onEdit={(p: Permission) => { setEditing(p); setCreating(false); }} onDelete={(p: Permission) => setDeletePerm(p)} />)}</div>
+      <div className="permissions-module-list space-y-4">{Object.keys(grouped).map(key => <ModuleCard key={key} moduleName={key} perms={grouped[key].perms} uiPerms={grouped[key].uiPerms} onEdit={(p: Permission) => { setEditing(p); setCreating(false); }} onDelete={(p: Permission) => setDeletePerm(p)} />)}</div>
       
       <SharedModal open={!!editing} onClose={() => { setEditing(null); setCreating(false); }} size="md" title={creating ? "Create Permission" : "Edit Permission"}>
         <div className="space-y-4">

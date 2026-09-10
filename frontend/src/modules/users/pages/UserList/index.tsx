@@ -19,6 +19,7 @@ import { userRoutesConfig } from "@/modules/users/routes";
 import type { User } from "@/lib/types";
 import type { TableColumn } from "@/shared/types/table";
 import type { PaginationMeta } from "@/shared/types/pagination";
+import "@/modules/users/styles/users.css";
 import {
   UserListHeader,
   UserStatsBar,
@@ -417,8 +418,8 @@ export const UserList: React.FC<UserListProps> = () => {
   const columns = getColumns(canEdit, canDelete, openEdit);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)]">
-      <div className="space-y-6 flex-1 overflow-y-auto pr-4">
+    <div className="users-module-page">
+      <div className="users-module-content">
         <UserListHeader
           total={meta.total}
           showStats={showStats}
@@ -479,7 +480,7 @@ export const UserList: React.FC<UserListProps> = () => {
           meta={meta}
           onPageChange={setPage}
           onPageSizeChange={handlePageSizeChange}
-          className="px-4"
+          className="users-module-pagination"
         />
 
         <UserFormModal

@@ -26,6 +26,7 @@ import {
   useStore,
   useHasPermission,
 } from "@/store";
+import { useAuth } from "@/modules/auth/hooks";
 import { useNavigationStore } from "@/modules/navigation/store";
 import { SidebarSkeleton } from "@/modules/navigation/components";
 import { EmptyState, ErrorState } from "@/shared/components/states";
@@ -69,20 +70,32 @@ const isRouteActive = (routeName: string | undefined, pathname: string): boolean
 export const Sidebar = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const { currentRoleId, roles } = useStore();
   const { navigation, loading: navLoading, error: navError, getNavigation } = useNavigationStore();
   const hasPermission = useHasPermission();
 
   React.useEffect(() => {
+    if (!isAuthenticated) return;
     getNavigation();
-  }, [getNavigation]);
+  }, [getNavigation, isAuthenticated]);
   
   const isActive = (name?: string) => isRouteActive(name, location.pathname);
   const currentRole = roles.find((r) => r.id === currentRoleId);
 
-  // Home is a global navigation item - always visible at the top
-  const homeNavItem = navigation.find((item) => item.id === "nav-home");
-  const homeSection = homeNavItem ? {
+  // Home is a global navigation item - always visible at the top,
+  // even when the protected navigation endpoint rejects guest requests.
+  const homeNavItem = navigation.find((item) => item.id === "nav-home") ?? {
+    id: "nav-home",
+    title: "Home",
+    icon: "layout-dashboard",
+    route: "home" as const,
+    order: 0,
+    visible: true,
+    children: [],
+  };
+
+  const homeSection = {
     id: "nav-home-section",
     title: "Global",
     order: -1,
@@ -91,8 +104,11 @@ export const Sidebar = ({ open, onClose }: { open: boolean; onClose: () => void 
       ...homeNavItem,
       // Home bypasses permission check - always visible
       permission: undefined,
+      title: "Home",
+      route: "home",
+      icon: "layout-dashboard",
     }],
-  } : null;
+  };
 
   const visibleNav = navigation
     .filter((section) => section.visible && section.id !== "nav-home")
@@ -145,7 +161,7 @@ export const Sidebar = ({ open, onClose }: { open: boolean; onClose: () => void 
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          {navError ? (
+          {navError && isAuthenticated ? (
             <div className="px-3">
               <ErrorState
                 title="Navigation failed to load"
@@ -155,7 +171,7 @@ export const Sidebar = ({ open, onClose }: { open: boolean; onClose: () => void 
                 className="border-0 bg-transparent p-4"
               />
             </div>
-          ) : visibleNav.length === 0 ? (
+          ) : finalNav.length === 0 ? (
             <div className="px-3">
               <EmptyState
                 icon={<Inbox size={18} />}

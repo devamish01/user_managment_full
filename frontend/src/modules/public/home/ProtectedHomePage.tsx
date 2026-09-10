@@ -12,29 +12,25 @@ import { HomePage } from "./HomePage";
  * - Authenticated: AdminLayout (with sidebar, admin header)
  */
 export const ProtectedHomePage: React.FC = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { loading } = useAuth();
 
-  // Show loading state while auth is being determined
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="flex flex-col items-center gap-3 text-foreground">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <span className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+            Checking authentication
+          </span>
+        </div>
       </div>
     );
   }
 
-  if (isAuthenticated) {
-    return (
-      <AdminLayout>
-        <HomePage />
-      </AdminLayout>
-    );
-  }
-
   return (
-    <PublicLayout>
+    <AdminLayout>
       <HomePage />
-    </PublicLayout>
+    </AdminLayout>
   );
 };
 
