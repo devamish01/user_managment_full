@@ -23,7 +23,7 @@ export const UserTableWrapper: React.FC<UserTableWrapperProps> = ({
   onRowClick,
   emptyMessage = "No users match your filters.",
 }) => (
-  <div className="flex-1 min-h-0 overflow-visible">
+  <div className="users-table-wrapper">
     <SharedTable
       columns={columns}
       data={data}
@@ -32,7 +32,6 @@ export const UserTableWrapper: React.FC<UserTableWrapperProps> = ({
       rowKey={(user) => user.id}
       onRowClick={onRowClick}
       emptyMessage={emptyMessage}
-      className="overflow-visible"
     />
   </div>
 );

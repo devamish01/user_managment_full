@@ -1,7 +1,7 @@
 import React from "react";
 import { SharedButton, SharedSearch } from "@/shared/components";
-import { DateRangeFilter } from "@/shared/components";
-import type { DateRangeValue } from "@/shared/components";
+import { DateRangeFilter } from "@/shared/components/filters";
+import type { DateRangeValue } from "@/shared/components/filters";
 import type { Role } from "@/lib/types";
 
 interface UserFiltersBarProps {
@@ -29,13 +29,13 @@ export const UserFiltersBar: React.FC<UserFiltersBarProps> = ({
   onDateRangeChange,
   onReset,
 }) => (
-  <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
-    <div className="md:col-span-6 lg:col-span-4">
+  <div className="users-filters-grid">
+    <div className="min-w-0">
       <SharedSearch value={searchQuery} onChange={onSearchQueryChange} placeholder="Search users..." />
     </div>
-    <div className="md:col-span-3 lg:col-span-2">
+    <div className="min-w-0">
       <select
-        className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
+        className="flex h-9 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm"
         value={roleFilter}
         onChange={(e) => onRoleChange(e.target.value)}
       >
@@ -45,9 +45,9 @@ export const UserFiltersBar: React.FC<UserFiltersBarProps> = ({
         ))}
       </select>
     </div>
-    <div className="md:col-span-3 lg:col-span-2">
+    <div className="min-w-0">
       <select
-        className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm"
+        className="flex h-9 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm"
         value={statusFilter}
         onChange={(e) => onStatusChange(e.target.value)}
       >
@@ -58,10 +58,10 @@ export const UserFiltersBar: React.FC<UserFiltersBarProps> = ({
         <option value="pending">Pending</option>
       </select>
     </div>
-    <div className="md:col-span-10 lg:col-span-3">
+    <div className="min-w-0">
       <DateRangeFilter value={dateRange} onChange={onDateRangeChange} placeholder="Filter by join date" />
     </div>
-    <div className="md:col-span-2 lg:col-span-1">
+    <div className="min-w-0">
       <SharedButton variant="outline" className="w-full" onClick={onReset}>Reset</SharedButton>
     </div>
   </div>

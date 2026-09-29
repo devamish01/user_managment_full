@@ -13,7 +13,7 @@ import type { UserQueryParams, Pagination } from "@/api";
 
 const defaultPagination: Pagination = {
   page: 1,
-  pageSize: 10,
+  limit: 10,
   totalPages: 0,
 };
 
@@ -62,9 +62,33 @@ export const useUsersStore = create<UsersStore>((set, get) => ({
         throw new Error(response.message || "Failed to load users");
       }
 
+      // Handle both backend format (meta.pagination) and mock format (meta directly)
+      const meta = (response.meta || {}) as Record<string, unknown>;
+      const paginationData = (meta.pagination || meta) as Record<string, unknown>;
+      
+      // Ensure hasNext and hasPrevious are computed if not provided
+      const page = (paginationData.page as number) || 1;
+      const limit = (paginationData.limit as number) || 10;
+      // Use global stats total for display, but keep filtered total for pagination logic
+      const filteredTotal = (paginationData.total as number) || 0;
+      const globalTotal = (meta.stats as Record<string, unknown>)?.total as number || filteredTotal;
+      const totalPages = (paginationData.totalPages as number) || (limit > 0 ? Math.ceil(filteredTotal / limit) : 1);
+      
       set({
         users: response.data ?? [],
-        pagination: (response.meta as Pagination) ?? defaultPagination,
+        pagination: {
+          ...defaultPagination,
+          ...paginationData,
+          page,
+          limit,
+          total: globalTotal, // Use global total for display
+          filteredTotal, // Keep filtered total for internal logic
+          totalPages,
+          hasNext: (paginationData.hasNext as boolean) ?? (page < totalPages),
+          hasPrevious: (paginationData.hasPrevious as boolean) ?? (page > 1),
+          // Include stats if available
+          stats: (meta.stats as Pagination['stats']) || (paginationData.stats as Pagination['stats']),
+        } as Pagination,
       });
     } catch (error) {
       set({

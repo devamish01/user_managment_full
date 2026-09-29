@@ -12,9 +12,11 @@ interface EventTableWrapperProps {
   events: Event[];
   pagination: {
     page: number;
-    pageSize: number;
+    limit: number;
     total: number;
     totalPages: number;
+    hasNext?: boolean;
+    hasPrevious?: boolean;
   };
   loading: boolean;
   permissions: UseEventListPermissionsReturn;
@@ -190,12 +192,16 @@ export function EventTableWrapper({
       {pagination.totalPages > 1 && (
         <div className="px-4 py-3 border-t border-gray-200">
           <SharedPagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
+            meta={{
+              page: pagination.page,
+              limit: pagination.limit,
+              total: pagination.total,
+              totalPages: pagination.totalPages,
+              hasNext: pagination.hasNext,
+              hasPrevious: pagination.hasPrevious,
+            }}
             onPageChange={onPageChange}
-            pageSize={pagination.pageSize}
             onPageSizeChange={onPageSizeChange}
-            totalItems={pagination.total}
           />
         </div>
       )}

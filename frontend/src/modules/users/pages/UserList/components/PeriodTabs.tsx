@@ -16,8 +16,8 @@ export const PeriodTabs: React.FC<PeriodTabsProps> = ({
   onDateRangeChange,
   onPageChange,
 }) => (
-  <div className="flex items-center justify-between gap-4">
-    <div className="flex items-center gap-2">
+  <div className="users-period-tabs">
+    <div className="flex flex-wrap items-center gap-2">
       {[
         { key: "all", label: "All" },
         { key: "daily", label: "Daily" },
@@ -33,15 +33,15 @@ export const PeriodTabs: React.FC<PeriodTabsProps> = ({
             onDateRangeChange({ startDate: "", endDate: "" });
             onPageChange(1);
           }}
-          className={`px-3 py-1 rounded-md text-sm ${period === t.key ? "bg-primary text-white" : "bg-transparent text-muted-foreground border border-border"}`}
+          className={`shrink-0 px-3 py-1.5 rounded-md text-sm whitespace-nowrap ${period === t.key ? "bg-primary text-white" : "bg-transparent text-muted-foreground border border-border"}`}
         >
           {t.label}
         </button>
       ))}
 
-      <div>
+      <div className="shrink-0">
         <Dropdown
-          trigger={<button className="px-3 py-1 rounded-md text-sm bg-transparent border border-border">More</button>}
+          trigger={<button className="shrink-0 px-3 py-1.5 rounded-md text-sm whitespace-nowrap bg-transparent border border-border">More</button>}
         >
           {(close) => (
             <>

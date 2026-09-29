@@ -24,7 +24,7 @@ export const UserStatsBar: React.FC<UserStatsBarProps> = ({
   showTabBlocked,
   onStatusClick,
 }) => (
-  <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 animate-in">
+  <div className="users-stats-grid animate-in">
     <UserStatCard
       label="Total Users"
       count={stats.total}

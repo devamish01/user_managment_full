@@ -38,7 +38,7 @@ export interface UseUserFiltersReturn {
 
 export function useUserFilters(): UseUserFiltersReturn {
   const { query, debouncedQuery, setQuery, clear } = useSearch(300);
-  const { page, limit, setPage, setLimit, nextPage, prevPage, reset } = usePagination(10);
+  const { page, limit, setPage, setLimit, nextPage, prevPage, reset } = usePagination(50);
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ startDate: "", endDate: "" });

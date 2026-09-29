@@ -30,14 +30,16 @@ export const SharedPagination: React.FC<SharedPaginationProps> = ({
   pageSizeOptions = [10, 20, 50, 100],
 }) => {
   const safePage = Number.isFinite(meta.page) && Number(meta.page) > 0 ? Number(meta.page) : 1;
-  const safeLimit = Number.isFinite(meta.limit) && Number(meta.limit) > 0 ? Number(meta.limit) : Number(meta.pageSize) > 0 ? Number(meta.pageSize) : 10;
-  const safeTotal = Number.isFinite(meta.total) ? Number(meta.total) : 0;
+  const safeLimit = Number.isFinite(meta.limit) && Number(meta.limit) > 0 ? Number(meta.limit) : 10;
+  // Use filteredTotal for page calculations, total for display
+  const filteredTotal = Number.isFinite(meta.filteredTotal) ? Number(meta.filteredTotal) : Number(meta.total) || 0;
+  const displayTotal = Number.isFinite(meta.total) ? Number(meta.total) : 0;
   const computedTotalPages = Number.isFinite(meta.totalPages) && Number(meta.totalPages) > 0
     ? Number(meta.totalPages)
-    : Math.max(1, Math.ceil(safeTotal / safeLimit));
+    : Math.max(1, Math.ceil(filteredTotal / safeLimit));
 
-  const startItem = safeTotal === 0 ? 0 : (safePage - 1) * safeLimit + 1;
-  const endItem = safeTotal === 0 ? 0 : Math.min(safePage * safeLimit, safeTotal);
+  const startItem = filteredTotal === 0 ? 0 : (safePage - 1) * safeLimit + 1;
+  const endItem = filteredTotal === 0 ? 0 : Math.min(safePage * safeLimit, filteredTotal);
   const hasPrevious = Boolean(meta.hasPrevious ?? safePage > 1);
   const hasNext = Boolean(meta.hasNext ?? safePage < computedTotalPages);
 
@@ -50,12 +52,12 @@ export const SharedPagination: React.FC<SharedPaginationProps> = ({
           <p className="text-sm text-muted-foreground">
             Showing <span className="font-semibold text-foreground">{startItem}</span> to{" "}
             <span className="font-semibold text-foreground">{endItem}</span> of{" "}
-            <span className="font-semibold text-foreground">{safeTotal}</span> users
+            <span className="font-semibold text-foreground">{displayTotal}</span> users
           </p>
           {showPageSize && onPageSizeChange && (
             <div className="rounded-xl border border-border/80 bg-background/70 px-2 py-1.5 shadow-inner shadow-black/5">
               <SharedSelect
-                value={safeLimit}
+                value={String(safeLimit)}
                 onValueChange={(value) => onPageSizeChange(Number(value))}
                 options={pageSizeOptions.map((size) => ({ value: String(size), label: `${size} per page` }))}
                 className="w-auto min-w-[140px]"

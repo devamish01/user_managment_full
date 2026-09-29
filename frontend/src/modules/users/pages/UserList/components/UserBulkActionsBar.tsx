@@ -10,7 +10,7 @@ export const UserBulkActionsBar: React.FC<UserBulkActionsBarProps> = ({ selected
   if (selectedCount === 0) return null;
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 md:flex-row md:items-center md:justify-between">
+    <div className="users-bulk-actions rounded-xl border border-primary/30 bg-primary/5 p-4">
       <p className="text-sm">
         <span className="font-semibold">{selectedCount}</span> user{selectedCount > 1 ? "s" : ""} selected
       </p>

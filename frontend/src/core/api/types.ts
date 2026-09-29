@@ -22,6 +22,7 @@ export interface Pagination {
   page?: number;
   limit?: number;
   total?: number;
+  filteredTotal?: number;
   pageSize?: number;
   totalPages?: number;
   hasNext?: boolean;
